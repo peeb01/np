@@ -1,0 +1,18 @@
+# Git
+.git
+.gitignore
+
+# Build artifacts
+*.o
+core/*.o
+np
+app.out
+
+# Temporary runtime generated files
+run_tmp.cpp
+run_tmp.out
+output_tmp.cpp
+
+# IDEs
+.vscode
+.idea

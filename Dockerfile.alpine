@@ -1,0 +1,13 @@
+FROM alpine:3.22
+
+# Install g++ and make (required for compiling the compiler and running np scripts)
+RUN apk add --no-cache g++ make
+
+# Set the working directory
+WORKDIR /app
+
+# Copy the compiler source code and build it
+COPY . /app
+RUN make
+
+ENTRYPOINT ["/app/np"]

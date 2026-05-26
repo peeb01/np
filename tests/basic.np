@@ -1,0 +1,88 @@
+# 1. Data Types & Variables
+print("--- 1. Data Types ---")
+int age = 23
+float height = 175.5
+string name = "Developer"
+bool is_running = true
+print("Age:", age, "Height:", height, "Name:", name, "Running:", is_running)
+
+# 2. Basic Operators
+print("\n--- 2. Basic Operators ---")
+int a = 10
+int b = 3
+int sum = a + b
+int diff = a - b
+int prod = a * b
+int div = a / b
+print("Math:", sum, diff, prod, div)
+
+bool res1 = (a == b)
+bool res2 = (a != b)
+bool res3 = (a > b)
+bool res4 = (a <= b)
+print("Comparison:", res1, res2, res3, res4)
+
+bool x = true
+bool y = false
+bool and_res = x and y
+bool or_res  = x or y
+bool not_res = not x
+print("Logic:", and_res, or_res, not_res)
+
+# 3. Explicit Type Conversion
+print("\n--- 3. Type Conversion ---")
+string str_num = "100"
+int native_num = int(str_num)
+int code = 65
+string str_code = string(code)
+int score = 85
+float f_score = float(score)
+print("Converted:", native_num, str_code, f_score)
+
+# 4. Conditionals
+print("\n--- 4. Conditionals ---")
+if score >= 80:
+    print("Grade A")
+elif score >= 70:
+    print("Grade B")
+elif score >= 60:
+    print("Grade C")
+else:
+    print("Grade F")
+
+# 5. Loops
+print("\n--- 5. Loops ---")
+int count = 1
+while count <= 3:
+    print("While Loop Count:", count)
+    count = count + 1
+
+for i in range(0, 3):
+    print("For Loop Iteration:", i)
+
+# 6. Functions (Void, Single Return, and Multi-Return)
+print("\n--- 6. Functions ---")
+fn say_hello(string n):
+    print("Hello", n)
+
+fn check_adult(int person_age) -> bool:
+    if person_age >= 20:
+        return true
+    return false
+
+fn divide(int dividend, int divisor) -> int, int:
+    int quotient = dividend / divisor
+    int remainder = dividend % divisor
+    return quotient, remainder
+
+say_hello("np-lang user")
+print("Is 23 an adult?", check_adult(23))
+int q, int r = divide(10, 3)
+print("Divide 10 by 3 -> Quotient:", q, "Remainder:", r)
+
+print("\n--- 7. Dynamic Type Checking ---")
+int dynamic_x = 20
+print("The type of dynamic_x is:", type(dynamic_x))
+
+print("\n-----------------------------------------------------")
+print(12+"Hi")

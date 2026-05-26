@@ -1,0 +1,15 @@
+FROM debian:trixie-slim
+
+# Install g++ and make, then clean up the apt cache to keep the image small
+RUN apt-get update && \
+    apt-get install -y g++ make && \
+    rm -rf /var/lib/apt/lists/*
+
+# Set the working directory
+WORKDIR /app
+
+# Copy the compiler source code and build it
+COPY . /app
+RUN make
+
+ENTRYPOINT ["/app/np"]

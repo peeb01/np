@@ -1,0 +1,45 @@
+# print("--- Fibonacci with Dictionary Cache (Memoization) ---")
+# 
+# fn fib(int n, dict cache) -> int:
+#     # Base case
+#     if n <= 1:
+#         return n
+#     
+#     string key = string(n)
+#     
+#     if cache.has_key(key):
+#         return int(cache[key])
+#         
+#     int result = fib(n - 1, cache) + fib(n - 2, cache)
+# 
+#     cache[key] = result
+#     return result
+# 
+# dict memo_cache
+# print("Calculating with cache...")
+# 
+# print("Result:", fib(10, memo_cache))
+# print("Total entries saved in dictionary cache:", memo_cache.length)
+
+print("\n--- Fibonacci without has_key() ---")
+fn fib_no_haskey(int n, dict cache) -> int:
+    if n <= 1:
+        return n
+    
+    string key = string(n)
+    
+    # Accessing an undefined key automatically creates it with a default value of 0!
+    int cached_val = int(cache[key])
+    if cached_val != 0:
+        return cached_val
+        
+    int result = fib_no_haskey(n - 1, cache) + fib_no_haskey(n - 2, cache)
+
+    cache[key] = result
+    return result
+
+dict memo_cache_2
+print("Calculating fib(92) to test 64-bit integer limit...")
+int fib_result = fib_no_haskey(92, memo_cache_2)
+print("Result:", fib_result, "\ntype: ", type(fib_result))
+print("Total entries saved in dictionary cache:", memo_cache_2.length)

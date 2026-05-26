@@ -1,0 +1,95 @@
+print("--- Testing Dynamic Arrays ---")
+array my_arr = [10, 20, 30, 40, 50]
+print("Original array:", my_arr)
+
+my_arr[1] = 99
+print("Modified array (index 1 to 99):", my_arr)
+
+print("Access index 2:", my_arr[2])
+
+print("\n--- Testing Pre-allocated Arrays ---")
+array static_arr[5]
+print("Static 5-element array defaults to:", static_arr)
+static_arr[0] = 1
+static_arr[4] = 100
+print("Static array after modification:", static_arr)
+
+print("\n--- Testing Dictionaries ---")
+dict user = {"name": "Alice", "age": 30, "is_admin": true}
+print("User dictionary:", user)
+
+user["age"] = 31
+user["status"] = "active"
+print("Modified user dictionary:", user)
+print("User name is:", user["name"])
+
+print("\n--- Testing Empty Dictionary & Multiple Additions ---")
+dict config
+config["host"] = "localhost"
+config["port"] = 8080
+config["max_connections"] = 100
+config["debug_mode"] = true
+print("Populated config:", config)
+
+print("\n--- Testing Nested Structures (Dicts in Arrays & Dicts in Dicts) ---")
+# Array containing multiple dictionaries
+array users = [
+    {"id": 1, "name": "Alice", "role": "Admin"},
+    {"id": 2, "name": "Bob", "role": "User"}
+]
+print("List of users:", users)
+print("Second user's name is:", users[1]["name"])
+
+# Dictionary containing both an Array and another Dictionary
+dict server_profile = {
+    "ip": "192.168.1.100",
+    "ports": [80, 443, 8080],
+    "settings": {"timeout": 30, "retry": true}
+}
+print("Server profile:", server_profile)
+print("Server timeout setting is:", server_profile["settings"]["timeout"])
+print("Second open port is:", server_profile["ports"][1])
+
+print("\n--- Testing Multi-Dimensional Arrays ---")
+array matrix = [
+    [1, 2, 3],
+    [4, 5, 6],
+    [7, 8, 9]
+]
+print("3x3 Matrix:", matrix)
+print("Element at row 1, col 2:", matrix[1][2])
+
+matrix[2][0] = 99
+print("Modified Matrix:", matrix)
+
+array tensor = [[[1, 2], [3, 4]], [[5, 6], [7, 8]]]
+print("3D Tensor:", tensor)
+print("Tensor element [1][0][1]:", tensor[1][0][1])
+
+print("\n--- Testing 5-Dimensional Arrays ---")
+array dim5 = [
+    [
+        [
+            [[1, 2], [3, 4]],
+            [[5, 6], [7, 8]]
+        ],
+        [
+            [[9, 10], [11, 12]],
+            [[13, 14], [15, 16]]
+        ]
+    ],
+    [
+        [
+            [[17, 18], [19, 20]],
+            [[21, 22], [23, 24]]
+        ],
+        [
+            [[25, 26], [27, 28]],
+            [[29, 30], [31, 32]]
+        ]
+    ]
+]
+
+print("5D Array Shape:", dim5.shape)
+print("5D Array Length (1st Dimension):", dim5.length)
+print("Element at [1][0][1][1][0]:", dim5[1][0][1][1][0])

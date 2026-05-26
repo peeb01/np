@@ -1,0 +1,8 @@
+fn get_pow(int base, int pow) -> int:
+    if pow == 0:
+        return 1
+    return base ^ pow
+
+int base = 10
+int pow = 3
+print("Power of", base, "to", pow, "is:", get_pow(base, pow))
