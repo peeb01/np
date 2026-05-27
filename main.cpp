@@ -34,7 +34,7 @@ void runPipeline(const std::string& filename, bool is_build_mode) {
         // std::cout << "[np-lang] Building native binary...\n";
         codegen.generateCPlusPlus("output_tmp.cpp");
         
-        int result = std::system("g++ -std=c++17 -O3 output_tmp.cpp -o app.out 2> /dev/null");
+        int result = std::system("g++ -std=c++17 -O3 output_tmp.cpp -o app.out -lgc 2> /dev/null");
         if (result == 0) {
             // std::cout << "[np-lang] Build successful! Created 'app.out'\n";
             std::remove("output_tmp.cpp");
@@ -45,7 +45,7 @@ void runPipeline(const std::string& filename, bool is_build_mode) {
     } else {
         // std::cout << "[np-lang] Compiling..." << std::endl;
         codegen.generateCPlusPlus("run_tmp.cpp");
-        int compile_result = std::system("g++ -std=c++17 -O3 run_tmp.cpp -o run_tmp.out");
+        int compile_result = std::system("g++ -std=c++17 -O3 run_tmp.cpp -o run_tmp.out -lgc");
         if (compile_result != 0) {
             std::cerr << "[np-lang] C++ Compilation Failed! See errors above.\n";
         } else {

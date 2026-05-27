@@ -18,7 +18,8 @@ void CodeGen::generateCPlusPlus(const std::string& output_filename) {
     out << "#include <vector>\n";
     out << "#include <map>\n";
     out << "#include <variant>\n";
-    out << "#include <memory>\n\n";
+    out << "#include <memory>\n";
+    out << "#include <gc.h>\n\n"; // Include Boehm GC
     out << "#include <cstdint>\n\n";
     out << "#include <cmath>\n\n";
     out << "#include <type_traits>\n\n";
@@ -28,8 +29,8 @@ void CodeGen::generateCPlusPlus(const std::string& output_filename) {
     out << "struct np_var;\n";
     out << "struct np_var_list;\n";
     out << "struct np_var_dict;\n";
-    out << "using ListPtr = std::shared_ptr<np_var_list>;\n";
-    out << "using DictPtr = std::shared_ptr<np_var_dict>;\n";
+    out << "using ListPtr = np_var_list*;\n"; // Change shared_ptr to raw pointer
+    out << "using DictPtr = np_var_dict*;\n";
     out << "struct np_var {\n";
     out << "    std::variant<int64_t, double, std::string, bool, ListPtr, DictPtr> v;\n";
     out << "    np_var() : v(0) {}\n";
@@ -44,8 +45,8 @@ void CodeGen::generateCPlusPlus(const std::string& output_filename) {
     out << "    np_var(ListPtr val) : v(val) {}\n";
     out << "    np_var(DictPtr val) : v(val) {}\n";
     
-    out << "    operator int() const;\n";
-    out << "    operator float() const;\n";
+    out << "    operator int64_t() const;\n";
+    out << "    operator double() const;\n";
     out << "    operator std::string() const;\n";
     out << "    operator bool() const;\n";
     out << "    std::string to_string() const;\n";
@@ -67,13 +68,12 @@ void CodeGen::generateCPlusPlus(const std::string& output_filename) {
     out << "    NP_CMP_OP(>)\n    NP_CMP_OP(<)\n    NP_CMP_OP(>=)\n    NP_CMP_OP(<=)\n    NP_CMP_OP(==)\n    NP_CMP_OP(!=)\n";
     out << "};\n\n";
     
-    out << "struct np_var_list { std::vector<np_var> vec; };\n";
-    out << "struct np_var_dict { std::map<std::string, np_var> map; };\n\n";
-    
-    out << "inline np_var::np_var(const std::vector<np_var>& val) : v(std::make_shared<np_var_list>(np_var_list{val})) {}\n";
-    out << "inline np_var::np_var(const std::map<std::string, np_var>& val) : v(std::make_shared<np_var_dict>(np_var_dict{val})) {}\n";
-    out << "inline np_var::operator int() const { if(std::holds_alternative<int64_t>(v)) return static_cast<int>(std::get<int64_t>(v)); if(std::holds_alternative<double>(v)) return static_cast<int>(std::get<double>(v)); return 0; }\n";
-    out << "inline np_var::operator float() const { if(std::holds_alternative<double>(v)) return static_cast<float>(std::get<double>(v)); if(std::holds_alternative<int64_t>(v)) return static_cast<float>(std::get<int64_t>(v)); return 0.0f; }\n";
+    out << "struct np_var_list { std::vector<np_var> vec; np_var_list(const std::vector<np_var>& v) : vec(v) {} void* operator new(size_t size) { return GC_MALLOC(size); } void operator delete(void* ptr) {} };\n";
+    out << "struct np_var_dict { std::map<std::string, np_var> map; np_var_dict(const std::map<std::string, np_var>& m) : map(m) {} void* operator new(size_t size) { return GC_MALLOC(size); } void operator delete(void* ptr) {} };\n\n";
+    out << "inline np_var::np_var(const std::vector<np_var>& val) : v(new np_var_list(val)) {}\n";
+    out << "inline np_var::np_var(const std::map<std::string, np_var>& val) : v(new np_var_dict(val)) {}\n";
+    out << "inline np_var::operator int64_t() const { if(std::holds_alternative<int64_t>(v)) return std::get<int64_t>(v); if(std::holds_alternative<double>(v)) return static_cast<int64_t>(std::get<double>(v)); return 0; }\n";
+    out << "inline np_var::operator double() const { if(std::holds_alternative<double>(v)) return std::get<double>(v); if(std::holds_alternative<int64_t>(v)) return static_cast<double>(std::get<int64_t>(v)); return 0.0; }\n";
     out << "inline np_var::operator std::string() const { return to_string(); }\n";
     out << "inline np_var::operator bool() const { if(std::holds_alternative<bool>(v)) return std::get<bool>(v); return false; }\n";
     out << "inline std::string np_var::to_string() const {\n";
@@ -132,29 +132,29 @@ void CodeGen::generateCPlusPlus(const std::string& output_filename) {
     out << "#define NP_CMP_OP_IMPL(op) inline bool np_var::operator op(const np_var& o) const { if(std::holds_alternative<int64_t>(v) && std::holds_alternative<int64_t>(o.v)) return std::get<int64_t>(v) op std::get<int64_t>(o.v); if(std::holds_alternative<double>(v) && std::holds_alternative<double>(o.v)) return std::get<double>(v) op std::get<double>(o.v); if(std::holds_alternative<int64_t>(v) && std::holds_alternative<double>(o.v)) return std::get<int64_t>(v) op std::get<double>(o.v); if(std::holds_alternative<double>(v) && std::holds_alternative<int64_t>(o.v)) return std::get<double>(v) op std::get<int64_t>(o.v); if(std::holds_alternative<std::string>(v) && std::holds_alternative<std::string>(o.v)) return std::get<std::string>(v) op std::get<std::string>(o.v); return false; }\n";
     out << "NP_CMP_OP_IMPL(>)\nNP_CMP_OP_IMPL(<)\nNP_CMP_OP_IMPL(>=)\nNP_CMP_OP_IMPL(<=)\nNP_CMP_OP_IMPL(==)\nNP_CMP_OP_IMPL(!=)\n\n";
 
-    out << "inline np_var operator+(int lhs, const np_var& rhs) { return np_var(lhs) + rhs; }\n";
-    out << "inline np_var operator+(float lhs, const np_var& rhs) { return np_var(lhs) + rhs; }\n";
+    out << "inline np_var operator+(int64_t lhs, const np_var& rhs) { return np_var(lhs) + rhs; }\n";
+    out << "inline np_var operator+(double lhs, const np_var& rhs) { return np_var(lhs) + rhs; }\n";
     out << "inline np_var operator+(const std::string& lhs, const np_var& rhs) { return np_var(lhs) + rhs; }\n";
     out << "inline np_var operator+(const char* lhs, const np_var& rhs) { return np_var(lhs) + rhs; }\n";
-    out << "inline np_var operator+(const np_var& lhs, int rhs) { return lhs + np_var(rhs); }\n";
-    out << "inline np_var operator+(const np_var& lhs, float rhs) { return lhs + np_var(rhs); }\n";
+    out << "inline np_var operator+(const np_var& lhs, int64_t rhs) { return lhs + np_var(rhs); }\n";
+    out << "inline np_var operator+(const np_var& lhs, double rhs) { return lhs + np_var(rhs); }\n";
     out << "inline np_var operator+(const np_var& lhs, const std::string& rhs) { return lhs + np_var(rhs); }\n";
     out << "inline np_var operator+(const np_var& lhs, const char* rhs) { return lhs + np_var(rhs); }\n";
     out << "#define NP_GLOBAL_MATH_OP(op) \\\n";
-    out << "inline np_var operator op(int lhs, const np_var& rhs) { return np_var(lhs) op rhs; } \\\n";
-    out << "inline np_var operator op(float lhs, const np_var& rhs) { return np_var(lhs) op rhs; } \\\n";
-    out << "inline np_var operator op(const np_var& lhs, int rhs) { return lhs op np_var(rhs); } \\\n";
-    out << "inline np_var operator op(const np_var& lhs, float rhs) { return lhs op np_var(rhs); }\n";
+    out << "inline np_var operator op(int64_t lhs, const np_var& rhs) { return np_var(lhs) op rhs; } \\\n";
+    out << "inline np_var operator op(double lhs, const np_var& rhs) { return np_var(lhs) op rhs; } \\\n";
+    out << "inline np_var operator op(const np_var& lhs, int64_t rhs) { return lhs op np_var(rhs); } \\\n";
+    out << "inline np_var operator op(const np_var& lhs, double rhs) { return lhs op np_var(rhs); }\n";
     out << "NP_GLOBAL_MATH_OP(-)\nNP_GLOBAL_MATH_OP(*)\nNP_GLOBAL_MATH_OP(/)\n";
     out << "NP_GLOBAL_MATH_OP(^)\n";
     out << "#define NP_GLOBAL_CMP_OP(op) \\\n";
-    out << "inline bool operator op(int lhs, const np_var& rhs) { return np_var(lhs) op rhs; } \\\n";
-    out << "inline bool operator op(float lhs, const np_var& rhs) { return np_var(lhs) op rhs; } \\\n";
+    out << "inline bool operator op(int64_t lhs, const np_var& rhs) { return np_var(lhs) op rhs; } \\\n";
+    out << "inline bool operator op(double lhs, const np_var& rhs) { return np_var(lhs) op rhs; } \\\n";
     out << "inline bool operator op(bool lhs, const np_var& rhs) { return np_var(lhs) op rhs; } \\\n";
     out << "inline bool operator op(const std::string& lhs, const np_var& rhs) { return np_var(lhs) op rhs; } \\\n";
     out << "inline bool operator op(const char* lhs, const np_var& rhs) { return np_var(lhs) op rhs; } \\\n";
-    out << "inline bool operator op(const np_var& lhs, int rhs) { return lhs op np_var(rhs); } \\\n";
-    out << "inline bool operator op(const np_var& lhs, float rhs) { return lhs op np_var(rhs); } \\\n";
+    out << "inline bool operator op(const np_var& lhs, int64_t rhs) { return lhs op np_var(rhs); } \\\n";
+    out << "inline bool operator op(const np_var& lhs, double rhs) { return lhs op np_var(rhs); } \\\n";
     out << "inline bool operator op(const np_var& lhs, bool rhs) { return lhs op np_var(rhs); } \\\n";
     out << "inline bool operator op(const np_var& lhs, const std::string& rhs) { return lhs op np_var(rhs); } \\\n";
     out << "inline bool operator op(const np_var& lhs, const char* rhs) { return lhs op np_var(rhs); }\n";
@@ -187,8 +187,8 @@ void CodeGen::generateCPlusPlus(const std::string& output_filename) {
     out << "std::string np_to_string(int64_t v) { return std::to_string(v); }\n";
     out << "std::string np_to_string(double v) { return std::to_string(v); }\n\n";
 
-    out << "int np_to_int(const np_var& v) { return static_cast<int>(v); }\n";
-    out << "float np_to_float(const np_var& v) { return static_cast<float>(v); }\n";
+    out << "int np_to_int(const np_var& v) { return static_cast<int>(static_cast<int64_t>(v)); }\n";
+    out << "float np_to_float(const np_var& v) { return static_cast<float>(static_cast<double>(v)); }\n";
     out << "std::string np_to_string(const np_var& v) { return v.to_string(); }\n\n";
 
     out << "template <typename T> std::string np_type(T) { return \"unknown\"; }\n";

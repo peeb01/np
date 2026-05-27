@@ -1,15 +1,38 @@
-FROM debian:trixie-slim
+# Stage 1: Build the 'np' compiler executable
+FROM debian:trixie-slim AS builder
 
-# Install g++ and make, then clean up the apt cache to keep the image small
+# Install build-time dependencies
 RUN apt-get update && \
-    apt-get install -y g++ make && \
+    apt-get install -y g++ make libgc-dev && \
     rm -rf /var/lib/apt/lists/*
 
 # Set the working directory
 WORKDIR /app
 
-# Copy the compiler source code and build it
-COPY . /app
+# Copy source code and build the compiler
+COPY Makefile ./
+COPY include/ ./include/
+COPY core/ ./core/
+COPY main.cpp ./
 RUN make
 
-ENTRYPOINT ["/app/np"]
+# ---
+
+# Stage 2: Create the final, lean runtime image
+FROM debian:trixie-slim
+
+# Install runtime dependencies
+# g++ is needed for the np compiler to transpile and run code.
+# libgc-dev is needed for the garbage collector linked in the generated code.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends g++ libgc-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+# Set the working directory for mounting code
+WORKDIR /workspace
+
+# Copy the compiled 'np' binary to a global bin directory
+COPY --from=builder /app/np /usr/local/bin/np
+
+# Set the entrypoint to our compiler
+ENTRYPOINT ["np"]

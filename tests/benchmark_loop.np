@@ -1,0 +1,15 @@
+print("--- np-lang Math Loop Benchmark ---")
+
+fn compute(int n) -> int:
+    int total = 0
+    int val = 1
+    for i in range(0, n):
+        total = total + val
+        val = (val * 3) / 2
+        if val > 100000:
+            val = 1
+    return total
+
+int n = 500000000
+int res = compute(n)
+print("Result:", res)

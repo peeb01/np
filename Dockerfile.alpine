@@ -1,13 +1,34 @@
-FROM alpine:3.22
+# Stage 1: Build the 'np' compiler executable
+FROM alpine:3.22 AS builder
 
-# Install g++ and make (required for compiling the compiler and running np scripts)
-RUN apk add --no-cache g++ make
+# Install build-time dependencies
+RUN apk add --no-cache g++ make gc-dev
 
 # Set the working directory
 WORKDIR /app
 
-# Copy the compiler source code and build it
-COPY . /app
+# Copy source code and build the compiler
+COPY Makefile ./
+COPY include/ ./include/
+COPY core/ ./core/
+COPY main.cpp ./
 RUN make
 
-ENTRYPOINT ["/app/np"]
+# ---
+
+# Stage 2: Create the final, lean runtime image
+FROM alpine:3.22
+
+# Install runtime dependencies
+# g++ is needed for the np compiler to transpile and run code.
+# gc-dev is the Boehm-GC package needed for the garbage collector linked in the generated code.
+RUN apk add --no-cache g++ gc-dev
+
+# Set the working directory for mounting code
+WORKDIR /workspace
+
+# Copy the compiled 'np' binary to a global bin directory
+COPY --from=builder /app/np /usr/local/bin/np
+
+# Set the entrypoint to our compiler
+ENTRYPOINT ["np"]
