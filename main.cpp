@@ -1,4 +1,3 @@
-// main.cpp
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -7,7 +6,6 @@
 #include "include/parser.hpp"
 #include "include/codegen.hpp"
 
-// ฟังก์ชันช่วยอ่านไฟล์ np-lang เข้ามาเป็น String
 std::string readFile(const std::string& filename) {
     std::ifstream file(filename);
     if (!file.is_open()) {
@@ -22,15 +20,15 @@ std::string readFile(const std::string& filename) {
 void runPipeline(const std::string& filename, bool is_build_mode) {
     std::string source_code = readFile(filename);
 
-    // 1. Lexical Analysis
+    // Lexical Analysis
     Lexer lexer(source_code);
     std::vector<Token> tokens = lexer.tokenize();
 
-    // 2. Syntax Analysis & Transpilation
+    // Syntax Analysis & Transpilation
     Parser parser(tokens);
     parser.parse();
 
-    // 3. Code Generation & Execution Mode Decision
+    // Code Generation & Execution Mode Decision
     CodeGen codegen(parser.getTranslatedCode());
     if (is_build_mode) {
         // std::cout << "[np-lang] Building native binary...\n";
@@ -76,7 +74,7 @@ int main(int argc, char* argv[]) {
         }
         runPipeline(argv[2], true);
     } else {
-        // เช่นสั่ง `./np main.np`
+        // `./np main.np`
         runPipeline(arg1, false);
     }
 
