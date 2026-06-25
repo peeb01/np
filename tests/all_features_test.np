@@ -1,0 +1,51 @@
+print("=== 1. Testing Element-wise Array Arithmetic & Scalar Broadcasting ===")
+array A = [1, 2, 3]
+array B = [10, 20, 30]
+
+print("A =", A)
+print("B =", B)
+print("A + B =", A + B)
+print("A - B =", A - B)
+print("A * B =", A * B)
+print("B / A =", B / A)
+print("B % A =", B % A)
+print("A ^ B =", A ^ B)
+
+print("\n--- Scalar Broadcasting ---")
+print("A + 10 =", A + 10)
+print("10 - A =", 10 - A)
+print("A * 5 =", A * 5)
+print("A ^ 2 =", A ^ 2)
+
+print("\n=== 2. Testing Foreach Loops ===")
+for item in A:
+    print("Item in A:", item)
+
+array str_arr = ["apple", "banana", "cherry"]
+for s in str_arr:
+    print("Fruit:", s)
+
+print("\n=== 3. Testing File I/O Operations ===")
+string filename = "tests/tmp_io.txt"
+string test_msg = "hello from NP language file io!"
+print("Writing msg to:", filename)
+int write_ok = write_file(filename, test_msg)
+print("Write status:", write_ok)
+
+string read_msg = read_file(filename)
+print("Read content:", read_msg)
+
+print("\n=== 4. Testing Vectorized Slicing ===")
+array slice_arr = [10, 20, 30, 40, 50]
+print("slice_arr =", slice_arr)
+print("slice_arr[1:4] =", slice_arr[1:4])
+print("slice_arr[:3] =", slice_arr[:3])
+print("slice_arr[2:] =", slice_arr[2:])
+print("slice_arr[:] =", slice_arr[:])
+
+string slice_str = "abcdefg"
+print("slice_str =", slice_str)
+print("slice_str[1:4] =", slice_str[1:4])
+print("slice_str[:3] =", slice_str[:3])
+print("slice_str[2:] =", slice_str[2:])
+print("slice_str[:] =", slice_str[:])

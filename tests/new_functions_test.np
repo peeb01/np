@@ -1,0 +1,46 @@
+print("--- Testing Math Functions ---")
+print("sqrt(16) =", sqrt(16))
+print("sqrt(2.25) =", sqrt(2.25))
+
+print("abs(-5) =", abs(-5))
+print("abs(-3.14) =", abs(-3.14))
+
+print("min(10, 20) =", min(10, 20))
+print("max(10, 20) =", max(10, 20))
+print("min(5.5, 2.3) =", min(5.5, 2.3))
+
+print("round(3.6) =", round(3.6))
+print("round(4.2) =", round(4.2))
+
+print("\n--- Testing len() Function ---")
+print("len(hello) =", len("hello"))
+array test_arr = [10, 20, 30]
+print("len(test_arr) =", len(test_arr))
+dict test_dict = {"a": 1, "b": 2}
+print("len(test_dict) =", len(test_dict))
+
+print("\n--- Testing Modulo (%) Operator on np_var ---")
+# Make sure % works on np_var elements inside array
+array mod_arr = [17, 5]
+int mod_res = mod_arr[0] % mod_arr[1]
+print("17 % 5 =", mod_res)
+
+print("\n--- Testing Array pop() Method ---")
+array pop_arr = [100, 200, 300]
+print("Original pop_arr:", pop_arr)
+int popped = pop_arr.pop()
+print("Popped element:", popped)
+print("After pop:", pop_arr)
+
+print("\n--- Testing Array clear() Method ---")
+array clear_arr = [1, 2, 3]
+print("Before clear:", clear_arr)
+clear_arr.clear()
+print("After clear:", clear_arr)
+
+print("\n--- Testing Dict keys(), values(), clear() Methods ---")
+dict d = {"name": "NP", "version": 1}
+print("Dictionary keys:", d.keys())
+print("Dictionary values:", d.values())
+d.clear()
+print("After clear:", d)

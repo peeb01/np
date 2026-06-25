@@ -1,41 +1,22 @@
-# 🚀 NP Compiler Architecture
+# NP Compiler & Language Reference
 
-Welcome to the **NP Compiler** project!
-
-This document explains the architecture and underlying processes of the compiler—how your `.np` code is translated into a blazing-fast executable binary.
+Welcome to the **NP Compiler** project! NP is a lightweight scripting language designed to combine Python-style clean syntax (indentation-based blocks, comprehensions, and structures) with native C++ execution speeds and automated Garbage Collection.
 
 ---
 
-## ⚙️ System Requirements (Local Installation)
-If you are running the `np` binary directly on your host machine without Docker, your system **must** have a C++ compiler and the Boehm GC library installed:
-*   **Compiler:** `g++` (GCC) with C++17 support.
-*   **Library:** `libgc-dev` (Debian/Ubuntu), `boehm-gc-dev` (Alpine), or `bdw-gc` (macOS).
+## Language Documentation
+
+To understand the language features in detail, check out the following sub-documents:
+*   **[Getting Started Guide](docs/getting_started.md):** Installation, host setup, run/build commands, and Docker execution.
+*   **[Language Specification](docs/language_specification.md):** Core syntax, variables, scopes, type rules, conditionals, loops, functions, and slicing.
+*   **[Advanced Features Guide](docs/advanced_features.md):** Structs, import modules, Pythonic list/dict comprehensions, 128/256-bit signed integers, and try/except exceptions.
+*   **[Standard Library Reference](docs/standard_library.md):** Built-in utility functions, File I/O helpers, and methods for strings and arrays.
 
 ---
 
-## ⚡ Quick Start with Docker (Run seamlessly)
+## Translation Pipeline (How it works)
 
-You can run the compiler via Docker as if it were installed locally on your machine. Set up a shell alias to mount your current directory (`$PWD`) to the container's `/workspace`:
-
-**Linux / macOS (Bash/Zsh):**
-```bash
-alias np='docker run --rm -it -v "$PWD":/workspace pib21/np-lang:alpine-3.22'
-
-# Now you can just use it like a native compiler!
-np tests/array.np
-```
-Or run with make
-
-```bash
-make run file-name.np
-```
-
----
-## 🏗️ Translation Pipeline (How it works)
-
-The `np-lang` compiler acts as a **Transpiler (Source-to-Source Compiler)**. It does not generate assembly directly. Instead, it translates `.np` code into Modern C++ (C++17) and utilizes `g++` (GCC) as the backend to compile it into highly optimized native machine code.
-
-### 📊 Compiler Pipeline Block Diagram
+NP acts as an **Ahead-Of-Time (AOT) Transpiler (Source-to-Source Compiler)**. It compiles `.np` code into optimized standard C++17, which is then compiled into a native machine-code binary by GCC (`g++`).
 
 ```text
    [ User Code ]
@@ -75,35 +56,32 @@ The `np-lang` compiler acts as a **Transpiler (Source-to-Source Compiler)**. It 
 
 ---
 
-##  Deep Dive: Core Mechanisms
+## Quick Start with Docker
 
-### 1. How the Parser Works
-The compiler uses a **Hand-written Recursive Descent Parser**. 
-Unlike traditional compilers that build a massive Abstract Syntax Tree (AST) in memory before generating code, the `np-lang` parser does **Single-Pass Transpilation**:
-*   **Simultaneous Analysis & Generation:** As it verifies the syntax rules (e.g., ensuring `if` statements end with `:`), it immediately constructs the equivalent C++ string.
-*   **Context Separation:** The parsed code is dynamically split into `global_code` (for functions via `fn`) and `translated_code` (for statements that belong inside the `int main()` entry point).
+You can compile and run NP code instantly via Docker. Mount your current directory (`$PWD`) to the container's `/workspace`:
 
-### 2. Memory Management & Garbage Collection
-`np-lang` handles memory management automatically, so you don't have to worry about manual memory allocation or memory leaks.
-*   **Primitive Types:** Types like `int`, `float`, `bool`, and `string` are mapped directly to C++ primitives and `std::string`. These are allocated on the **Stack**, making them extremely fast and automatically cleaned up when they go out of scope.
-*   **Complex Types (Arrays & Dictionaries):** `np-lang` integrates the **Boehm-Demers-Weiser Garbage Collector (Boehm GC)** for its heap-allocated structures. This allows the creation of complex, nested, or dynamically resizing arrays and dictionaries without memory leaks or the circular reference issues commonly found in ARC. The GC runs transparently in the background, automatically reclaiming unused memory during execution.
+### Linux / macOS (Bash/Zsh):
+```bash
+alias np='docker run --rm -it -v "$PWD":/workspace pib21/np-lang:alpine-3.22'
 
-### 3. Does it use JIT (Just-In-Time) Compilation?
-**No. np-lang is 100% Ahead-Of-Time (AOT) compiled.** 
-While it feels like an interpreted language or JIT when you use the "Run Mode", the compiler is actually doing AOT compilation behind the scenes:
-*   **Run Mode (`./np main.np`):** Compiles to a temporary binary, executes it instantly, and deletes the binary right after. This gives a Python-like scripting experience with C++ performance.
-*   **Build Mode (`./np build main.np`):** Compiles and produces a permanent executable binary (`app.out`) for deployment, similar to Go.
+# Run immediately (interpreting style)
+np tests/advanced_features_test.np
+
+# Compile to a binary (AOT)
+np build tests/advanced_features_test.np
+```
 
 ---
 
-## 🛡️ Types Binding (C++ Mapping)
+## Core Mechanisms & Features
 
-To achieve near-native C++ performance, `np-lang` enforces static typing and maps data types strictly:
+### 1. Single-Pass Recursive Descent Parser
+NP uses a hand-written parser that translates syntax rules directly into C++ strings on the fly. This results in incredibly fast compilation times.
 
-*   `int` ➡️ `int64_t`
-*   `float` ➡️ `double`
-*   `string` ➡️ `std::string`
-*   `array` ➡️ `std::vector<np_var>` (Managed via `std::shared_ptr`)
-*   `dict` ➡️ `std::map<std::string, np_var>` (Managed via `std::shared_ptr`)
+### 2. Automatic Memory Management (Boehm GC)
+*   **Stack Allocation:** Primitive types (`int`, `float`, `bool`, `string`) are mapped to C++ primitives and stack-allocated, leaving no footprint.
+*   **Garbage Collection:** Complex data structures (`array`, `dict`) are heap-allocated raw pointers managed seamlessly by the **Boehm Garbage Collector** (`-lgc`). No manual memory management or ARC references needed.
 
-> _Note: There is absolutely NO implicit casting between types (e.g., string + int). This guarantees maximum runtime safety._
+### 3. Built-in 128-bit & 256-bit Integers
+*   `int128` maps directly to GCC's native `__int128` type.
+*   `int256` is a software-implemented 256-bit signed integer supporting math, comparisons, division, and modulo natively in the compiler.

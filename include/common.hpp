@@ -14,6 +14,11 @@ enum class TokenType {
     KEYWORD_AND,     // and
     KEYWORD_OR,      // or
     KEYWORD_NOT,     // not
+    KEYWORD_STRUCT,  // struct
+    KEYWORD_TRY,     // try
+    KEYWORD_EXCEPT,  // except
+    KEYWORD_THROW,   // throw
+    KEYWORD_IMPORT,  // import
     IDENTIFIER,      // A, B, x, y
     ASSIGN,          // =
     STRING_LITERAL,  // "123"

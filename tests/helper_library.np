@@ -1,0 +1,7 @@
+# Helper library for testing import system
+fn double_value(int val) -> int:
+    return val * 2
+
+struct LibUser:
+    string role
+    int level

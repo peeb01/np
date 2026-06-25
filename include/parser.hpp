@@ -16,6 +16,7 @@ private:
     std::string translated_code;
     std::string global_code;
     std::unordered_map<std::string, std::string> variables;
+    std::unordered_map<std::string, std::vector<std::pair<std::string, std::string>>> structs;
     std::vector<bool> is_index_stack;
 
     Token peek(int offset = 0) const;

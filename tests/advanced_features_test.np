@@ -1,0 +1,76 @@
+# Import tests
+import math
+import "tests/helper_library.np"
+
+print("=== 1. Testing Module Import System ===")
+int imported_calc = double_value(21)
+print("imported_calc =", imported_calc)
+LibUser lib_user = LibUser("developer", 10)
+print("lib_user role =", lib_user.role)
+print("lib_user level =", lib_user.level)
+
+print("\n=== 2. Testing 128-bit & 256-bit Integers ===")
+int128 big1 = 123456789012345678901234567890
+int128 big2 = 2
+int128 big_res = big1 * big2
+print("int128 mult result =", big_res)
+
+int256 v256 = 100000000000000000000000000000000000000000000000000000000000
+print("int256 v256 =", v256)
+print("int256 div (v256 / 3) =", v256 / 3)
+print("int256 add (v256 + v256) =", v256 + v256)
+print("int256 comparisons (v256 > 0) =", v256 > 0)
+
+print("\n=== 3. Testing Custom Structures (struct) ===")
+struct User:
+    string name
+    int age
+    bool is_admin
+
+User u = User("Bob", 25, true)
+print("u.name =", u.name)
+print("u.age =", u.age)
+print("u.is_admin =", u.is_admin)
+
+# Mutate struct field via dot notation
+u.age = 26
+print("u.age updated =", u.age)
+
+print("\n=== 4. Testing Advanced Collection Methods ===")
+# Array methods
+array my_arr = [50, 10, 40, 20, 30]
+print("Original array:", my_arr)
+my_arr.sort()
+print("Sorted array:", my_arr)
+my_arr.reverse()
+print("Reversed array:", my_arr)
+print("Contains 30:", my_arr.contains(30))
+print("Contains 100:", my_arr.contains(100))
+
+# String methods
+string s = "   hello,world,np-lang   "
+string trimmed = s.trim()
+print("Trimmed string: '" + trimmed + "'")
+array parts = trimmed.split(",")
+print("Split array:", parts)
+string joined = "-".join(parts)
+print("Joined string: '" + joined + "'")
+
+print("\n=== 5. Testing Pythonic Comprehensions (List & Dict) ===")
+array A = [x * 2 for x in range(1, 5)]
+print("List comp [x*2 for x in range(1,5)] =", A)
+
+array filtered = [x for x in A if x > 4]
+print("List comp [x for x in A if x > 4] =", filtered)
+
+dict d = {x: x * 10 for x in A}
+print("Dict comp {x: x*10 for x in A} =", d)
+
+print("\n=== 6. Testing Exception Handling ===")
+try:
+    print("Inside try block. Throwing error...")
+    throw "This is a custom NP language exception!"
+except Exception e:
+    print("Caught exception:", e)
+
+print("Program finished successfully!")

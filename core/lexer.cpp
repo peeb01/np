@@ -71,7 +71,7 @@ std::vector<Token> Lexer::tokenize() {
                 id += advance();
             }
             
-            if (id == "int" || id == "int32" || id == "int64" || id == "string" || id == "float" || id == "float32" || id == "float64" || id == "bool" || id == "array" || id == "dict") tokens.push_back({TokenType::KEYWORD_TYPE, id, line});
+            if (id == "int" || id == "int32" || id == "int64" || id == "int128" || id == "int256" || id == "string" || id == "float" || id == "float32" || id == "float64" || id == "bool" || id == "array" || id == "dict") tokens.push_back({TokenType::KEYWORD_TYPE, id, line});
             else if (id == "if") tokens.push_back({TokenType::KEYWORD_IF, id, line});
             else if (id == "elif") tokens.push_back({TokenType::KEYWORD_ELIF, id, line});
             else if (id == "else") tokens.push_back({TokenType::KEYWORD_ELSE, id, line});
@@ -83,6 +83,11 @@ std::vector<Token> Lexer::tokenize() {
             else if (id == "and") tokens.push_back({TokenType::KEYWORD_AND, id, line});
             else if (id == "or") tokens.push_back({TokenType::KEYWORD_OR, id, line});
             else if (id == "not") tokens.push_back({TokenType::KEYWORD_NOT, id, line});
+            else if (id == "struct") tokens.push_back({TokenType::KEYWORD_STRUCT, id, line});
+            else if (id == "try") tokens.push_back({TokenType::KEYWORD_TRY, id, line});
+            else if (id == "except") tokens.push_back({TokenType::KEYWORD_EXCEPT, id, line});
+            else if (id == "throw") tokens.push_back({TokenType::KEYWORD_THROW, id, line});
+            else if (id == "import") tokens.push_back({TokenType::KEYWORD_IMPORT, id, line});
             else if (id == "true" || id == "false") tokens.push_back({TokenType::BOOL_LITERAL, id, line});
             else tokens.push_back({TokenType::IDENTIFIER, id, line});
             continue;
