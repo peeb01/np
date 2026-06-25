@@ -11,6 +11,7 @@ To understand the language features in detail, check out the following sub-docum
 *   **[Language Specification](docs/language_specification.md):** Core syntax, variables, scopes, type rules, conditionals, loops, functions, and slicing.
 *   **[Advanced Features Guide](docs/advanced_features.md):** Structs, import modules, Pythonic list/dict comprehensions, 128/256-bit signed integers, and try/except exceptions.
 *   **[Standard Library Reference](docs/standard_library.md):** Built-in utility functions, File I/O helpers, and methods for strings and arrays.
+*   **[NP Programming Tutorial Book](docs/tutorial/README.md):** A step-by-step programming book covering NP basics to advanced topics.
 
 ---
 
