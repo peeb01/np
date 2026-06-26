@@ -1,0 +1,10 @@
+string filename = "test_data.txt"
+string content = "Hello! This is a test file written from NP language."
+
+print("Writing to file:", filename)
+int success = write_file(filename, content)
+print("Write success:", success)
+
+print("Reading from file:", filename)
+string read_content = read_file(filename)
+print("Read content:", read_content)

@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 class Parser {
 public:
@@ -18,6 +19,7 @@ private:
     std::unordered_map<std::string, std::string> variables;
     std::unordered_map<std::string, std::vector<std::pair<std::string, std::string>>> structs;
     std::vector<bool> is_index_stack;
+    std::unordered_set<std::string> imported_modules;
 
     Token peek(int offset = 0) const;
     Token advance();

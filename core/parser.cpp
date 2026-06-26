@@ -65,7 +65,7 @@ void Parser::parse() {
 }
 
 std::string Parser::getTranslatedCode() const {
-    return global_code + "\nint main() {\n" + translated_code + "\nreturn 0;\n}\n";
+    return global_code + "\nint main(int argc, char* argv[]) {\n    np_init_args(argc, argv);\n" + translated_code + "\nreturn 0;\n}\n";
 }
 
 std::string Parser::parseBlock() {
@@ -99,6 +99,61 @@ std::string Parser::parseExpressionUntil(TokenType stop1, TokenType stop2) {
         
         if (t.type == TokenType::LPAREN) nesting++;
         if (t.type == TokenType::RPAREN) nesting--;
+
+        if (t.type == TokenType::IDENTIFIER && (t.value == "sys" || t.value == "json" || t.value == "time" || t.value == "regex")) {
+            std::string mod_name = t.value;
+            if (!imported_modules.count(mod_name)) {
+                std::cerr << "Syntax Error on line " << t.line << ": Module '" << mod_name << "' must be imported before use\n";
+                exit(1);
+            }
+            expect(TokenType::DOT, "Expected '.' after module name");
+            Token member = advance();
+            if (member.type != TokenType::IDENTIFIER) {
+                std::cerr << "Syntax Error on line " << member.line << ": Expected identifier after '.' on module '" << mod_name << "'\n";
+                exit(1);
+            }
+            if (mod_name == "sys") {
+                if (member.value == "argv" || member.value == "args") {
+                    expr += "np_sys_argv";
+                } else {
+                    std::cerr << "Syntax Error on line " << member.line << ": Unknown member '" << member.value << "' on sys module\n";
+                    exit(1);
+                }
+            } else if (mod_name == "json") {
+                if (member.value == "parse" || member.value == "unmarshal") {
+                    expr += "np_json_parse";
+                } else if (member.value == "stringify" || member.value == "marshal") {
+                    expr += "np_json_stringify";
+                } else {
+                    std::cerr << "Syntax Error on line " << member.line << ": Unknown member '" << member.value << "' on json module\n";
+                    exit(1);
+                }
+            } else if (mod_name == "time") {
+                if (member.value == "now") {
+                    expr += "np_time_now";
+                } else if (member.value == "sleep") {
+                    expr += "np_time_sleep";
+                } else if (member.value == "format") {
+                    expr += "np_time_format";
+                } else {
+                    std::cerr << "Syntax Error on line " << member.line << ": Unknown member '" << member.value << "' on time module\n";
+                    exit(1);
+                }
+            } else if (mod_name == "regex") {
+                if (member.value == "match") {
+                    expr += "np_regex_match";
+                } else if (member.value == "find") {
+                    expr += "np_regex_find";
+                } else if (member.value == "replace") {
+                    expr += "np_regex_replace";
+                } else {
+                    std::cerr << "Syntax Error on line " << member.line << ": Unknown member '" << member.value << "' on regex module\n";
+                    exit(1);
+                }
+            }
+            prev_token = member;
+            continue;
+        }
 
         if (t.type == TokenType::IDENTIFIER && t.value == "input") {
             if (check(TokenType::LPAREN)) { advance(); if (check(TokenType::RPAREN)) advance(); }
@@ -617,6 +672,7 @@ std::string Parser::parseStatement() {
         advance(); // import
         Token path_tok = advance();
         if (path_tok.type == TokenType::IDENTIFIER) {
+            imported_modules.insert(path_tok.value);
             if (check(TokenType::NEWLINE)) advance();
             return "";
         }

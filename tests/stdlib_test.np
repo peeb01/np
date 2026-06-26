@@ -1,0 +1,71 @@
+import sys
+import json
+import time
+import regex
+
+# 1. Test sys module
+print("--- Test sys.argv ---")
+print("Number of arguments:", len(sys.argv))
+print("Argument 0 (executable):", sys.argv[0])
+if len(sys.argv) > 1:
+    print("Argument 1:", sys.argv[1])
+if len(sys.argv) > 2:
+    print("Argument 2:", sys.argv[2])
+
+# 2. Test time module
+print("--- Test time module ---")
+float t1 = time.now()
+print("Current timestamp:", t1)
+print("Sleeping for 0.1 seconds...")
+time.sleep(0.1)
+float t2 = time.now()
+print("Elapsed: >= 0.1s?", (t2 - t1) >= 0.09)
+
+string formatted = time.format(t1, "%Y-%m-%d %H:%M:%S")
+print("Formatted time len > 0?", len(formatted) > 0)
+
+# 3. Test json module
+print("--- Test json module ---")
+dict sample_dict = {
+    "name": "Bob",
+    "age": 30,
+    "is_admin": true,
+    "scores": [95, 88, 100],
+    "nested": {
+        "verified": false,
+        "ratio": 1.25
+    }
+}
+string serialized = json.stringify(sample_dict)
+print("Serialized JSON length > 0?", len(serialized) > 0)
+
+dict parsed = json.parse(serialized)
+print("Parsed age == 30?", parsed["age"] == 30)
+print("Parsed is_admin == true?", parsed["is_admin"] == true)
+print("Parsed verification status == false?", parsed["nested"]["verified"] == false)
+print("Parsed ratio == 1.25?", parsed["nested"]["ratio"] == 1.25)
+print("Parsed scores len == 3?", len(parsed["scores"]) == 3)
+print("Parsed scores[0] == 95?", parsed["scores"][0] == 95)
+
+# Go-style alias test
+string serialized_alias = json.marshal(sample_dict)
+dict parsed_alias = json.unmarshal(serialized_alias)
+print("Parsed alias age == 30?", parsed_alias["age"] == 30)
+
+# 4. Test regex module
+print("--- Test regex module ---")
+string email = "test@domain.com"
+bool is_email = regex.match("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", email)
+print("Is email match?", is_email == true)
+
+bool is_not_email = regex.match("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", "not_an_email")
+print("Is invalid email match?", is_not_email == false)
+
+string text = "My phone number is 123-456-7890."
+string found = regex.find("[0-9]{3}-[0-9]{3}-[0-9]{4}", text)
+print("Found phone number:", found)
+
+string replaced = regex.replace("[0-9]{3}-[0-9]{3}-[0-9]{4}", "XXX-XXX-XXXX", text)
+print("Replaced text:", replaced)
+
+print("--- Test Complete ---")

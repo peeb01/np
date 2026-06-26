@@ -17,7 +17,7 @@ std::string readFile(const std::string& filename) {
     return buffer.str();
 }
 
-void runPipeline(const std::string& filename, bool is_build_mode) {
+void runPipeline(const std::string& filename, bool is_build_mode, const std::vector<std::string>& run_args = {}) {
     std::string source_code = readFile(filename);
 
     // Lexical Analysis
@@ -50,7 +50,11 @@ void runPipeline(const std::string& filename, bool is_build_mode) {
             std::cerr << "[np-lang] C++ Compilation Failed! See errors above.\n";
         } else {
             // std::cout << "[np-lang] Running..." << std::endl;
-            std::system("./run_tmp.out");
+            std::string cmd = "./run_tmp.out";
+            for (const auto& arg : run_args) {
+                cmd += " \"" + arg + "\"";
+            }
+            std::system(cmd.c_str());
         }
         std::remove("run_tmp.cpp");
         std::remove("run_tmp.out");
@@ -75,7 +79,11 @@ int main(int argc, char* argv[]) {
         runPipeline(argv[2], true);
     } else {
         // `./np main.np`
-        runPipeline(arg1, false);
+        std::vector<std::string> run_args;
+        for (int i = 2; i < argc; ++i) {
+            run_args.push_back(argv[i]);
+        }
+        runPipeline(arg1, false, run_args);
     }
 
     return 0;
