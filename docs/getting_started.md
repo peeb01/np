@@ -1,6 +1,6 @@
 # Getting Started with NP Language
 
-NP is a statically/dynamically typed scripting language that transpiles directly to C++17 and compiles into highly optimized native machine code. Memory is automatically managed via the Boehm Garbage Collector.
+NP is a statically/dynamically typed scripting language that transpiles directly to C++17 and compiles into highly optimized native machine code. Memory is automatically managed via C++ RAII / reference counting.
 
 ---
 
@@ -10,22 +10,21 @@ NP is a statically/dynamically typed scripting language that transpiles directly
 To build and run the NP compiler directly on your host machine, you need:
 *   **Operating System:** Linux/WSL or macOS.
 *   **C++ Compiler:** `g++` (GCC) with support for C++17.
-*   **Garbage Collector:** Boehm GC (`libgc`).
 
-On Ubuntu/Debian/WSL, install them using:
+On Ubuntu/Debian/WSL, install using:
 ```bash
 sudo apt-get update
-sudo apt-get install -y build-essential libgc-dev
+sudo apt-get install -y build-essential
 ```
 
 On Alpine Linux:
 ```bash
-apk add build-essential boehm-gc-dev
+apk add build-essential
 ```
 
 On macOS:
 ```bash
-brew install bdw-gc gcc
+brew install gcc
 ```
 
 ### 2. Building the Compiler

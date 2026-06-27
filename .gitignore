@@ -1,6 +1,7 @@
 np
 np/
 *.py
+*.np
 
 # C++ Build Artifacts and Transpiler Output
 *.o

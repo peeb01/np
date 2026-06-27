@@ -20,8 +20,8 @@ NP supports both **inferred dynamic variables** and **explicitly declared types*
 | `float64` | `double` | 64-bit double-precision float |
 | `string` | `np_string` | Wrapper inheriting from `std::string` |
 | `bool` | `bool` | Boolean (`true` / `false`) |
-| `array` | `np_var` | Heap-allocated vector, managed by Boehm GC |
-| `dict` | `np_var` | Heap-allocated map, managed by Boehm GC |
+| `array` | `np_var` | Heap-allocated vector, managed by C++ std::shared_ptr |
+| `dict` | `np_var` | Heap-allocated map, managed by C++ std::shared_ptr |
 
 ---
 

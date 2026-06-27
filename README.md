@@ -79,9 +79,9 @@ np build tests/advanced_features_test.np
 ### 1. Single-Pass Recursive Descent Parser
 NP uses a hand-written parser that translates syntax rules directly into C++ strings on the fly. This results in incredibly fast compilation times.
 
-### 2. Automatic Memory Management (Boehm GC)
+### 2. Automatic Memory Management (Reference Counting / RAII)
 *   **Stack Allocation:** Primitive types (`int`, `float`, `bool`, `string`) are mapped to C++ primitives and stack-allocated, leaving no footprint.
-*   **Garbage Collection:** Complex data structures (`array`, `dict`) are heap-allocated raw pointers managed seamlessly by the **Boehm Garbage Collector** (`-lgc`). No manual memory management or ARC references needed.
+*   **Reference Counting:** Complex data structures (`array`, `dict`) are heap-allocated and managed automatically using standard C++ reference-counting smart pointers (`std::shared_ptr`). They are reclaimed instantly and deterministically as soon as they are no longer referenced, with no garbage collector overhead.
 
 ### 3. Built-in 128-bit & 256-bit Integers
 *   `int128` maps directly to GCC's native `__int128` type.

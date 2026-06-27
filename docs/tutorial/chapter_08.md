@@ -47,12 +47,12 @@ print("Area:", area)
 
 ---
 
-## 3. Automatic Garbage Collection (Boehm GC)
+## 3. Automatic Reference Counting (RAII)
 
-NP manages memory automatically using the **Boehm-Demers-Weiser Garbage Collector** (`-lgc`):
+NP manages memory automatically using C++ standard smart pointers (`std::shared_ptr`) to perform Reference Counting:
 
-*   **Zero Leakage:** When an array or dictionary falls out of scope or is no longer referenced, the garbage collector automatically reclaims the memory behind the scenes.
-*   **Safety:** You get the safety of automatic memory management without JIT interpreter overhead, keeping runtime execution clean and predictable.
+*   **Zero Leakage:** When an array or dictionary falls out of scope or is no longer referenced, the runtime automatically destructs it and reclaims its heap memory instantly and deterministically.
+*   **Safety & Performance:** You get the safety of automatic memory management with zero runtime collection pauses, keeping execution speeds clean and predictable without JIT interpreter overhead.
 
 ---
 

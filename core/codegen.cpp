@@ -21,7 +21,6 @@ void CodeGen::generateCPlusPlus(const std::string& output_filename) {
     out << "#include <map>\n";
     out << "#include <variant>\n";
     out << "#include <memory>\n";
-    out << "#include <gc.h>\n\n"; // Include Boehm GC
     out << "#include <cstdint>\n\n";
     out << "#include <cmath>\n\n";
     out << "#include <type_traits>\n\n";
@@ -278,8 +277,8 @@ void CodeGen::generateCPlusPlus(const std::string& output_filename) {
     out << "struct np_var;\n";
     out << "struct np_var_list;\n";
     out << "struct np_var_dict;\n";
-    out << "using ListPtr = np_var_list*;\n"; // Change shared_ptr to raw pointer
-    out << "using DictPtr = np_var_dict*;\n";
+    out << "using ListPtr = std::shared_ptr<np_var_list>;\n";
+    out << "using DictPtr = std::shared_ptr<np_var_dict>;\n";
     out << "struct np_var {\n";
     out << "    std::variant<int64_t, double, np_string, bool, ListPtr, DictPtr, np_int128, np_int256> v;\n";
     out << "    np_var() : v(0) {}\n";
@@ -336,10 +335,10 @@ void CodeGen::generateCPlusPlus(const std::string& output_filename) {
     out << "    NP_CMP_OP(>)\n    NP_CMP_OP(<)\n    NP_CMP_OP(>=)\n    NP_CMP_OP(<=)\n    NP_CMP_OP(==)\n    NP_CMP_OP(!=)\n";
     out << "};\n\n";
     
-    out << "struct np_var_list { std::vector<np_var> vec; np_var_list(const std::vector<np_var>& v) : vec(v) {} void* operator new(size_t size) { return GC_MALLOC(size); } void operator delete(void* ptr) {} };\n";
-    out << "struct np_var_dict { std::map<std::string, np_var> map; np_var_dict(const std::map<std::string, np_var>& m) : map(m) {} void* operator new(size_t size) { return GC_MALLOC(size); } void operator delete(void* ptr) {} };\n\n";
-    out << "inline np_var::np_var(const std::vector<np_var>& val) : v(new np_var_list(val)) {}\n";
-    out << "inline np_var::np_var(const std::map<std::string, np_var>& val) : v(new np_var_dict(val)) {}\n";
+    out << "struct np_var_list { std::vector<np_var> vec; np_var_list(const std::vector<np_var>& v) : vec(v) {} };\n";
+    out << "struct np_var_dict { std::map<std::string, np_var> map; np_var_dict(const std::map<std::string, np_var>& m) : map(m) {} };\n\n";
+    out << "inline np_var::np_var(const std::vector<np_var>& val) : v(std::make_shared<np_var_list>(val)) {}\n";
+    out << "inline np_var::np_var(const std::map<std::string, np_var>& val) : v(std::make_shared<np_var_dict>(val)) {}\n";
     
     out << "inline np_int256 to_int256(const np_var& var) {\n";
     out << "    if (std::holds_alternative<np_int256>(var.v)) return std::get<np_int256>(var.v);\n";

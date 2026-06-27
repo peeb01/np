@@ -4,7 +4,7 @@
 CXX      := g++
 # -O3 for max optimization, consistent with internal compiler calls
 CXXFLAGS := -std=c++17 -Wall -Wextra -I./include -O3
-LDFLAGS  := -lgc
+LDFLAGS  :=
 TARGET   := np
 
 # For silent make by default (run `make V=1` for verbose output)
