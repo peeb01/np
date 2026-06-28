@@ -2,9 +2,13 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <vector>
+#include <cstdio>
+#include <cstdlib>
 #include "include/lexer.hpp"
 #include "include/parser.hpp"
-#include "include/codegen.hpp"
+#include "include/llvm_codegen.hpp"
+#include <llvm/Support/raw_os_ostream.h>
 
 std::string readFile(const std::string& filename) {
     std::ifstream file(filename);
@@ -24,40 +28,49 @@ void runPipeline(const std::string& filename, bool is_build_mode, const std::vec
     Lexer lexer(source_code);
     std::vector<Token> tokens = lexer.tokenize();
 
-    // Syntax Analysis & Transpilation
+    // Syntax Analysis & AST Creation
     Parser parser(tokens);
     parser.parse();
 
-    // Code Generation & Execution Mode Decision
-    CodeGen codegen(parser.getTranslatedCode());
-    if (is_build_mode) {
-        // std::cout << "[np-lang] Building native binary...\n";
-        codegen.generateCPlusPlus("output_tmp.cpp");
-        
-        int result = std::system("g++ -std=c++17 -O3 output_tmp.cpp -o app.out 2> /dev/null");
-        if (result == 0) {
-            // std::cout << "[np-lang] Build successful! Created 'app.out'\n";
-            std::remove("output_tmp.cpp");
-        } else {
-            std::cerr << "Syntax Error: Invalid np-lang code structure.\n";
-            std::remove("output_tmp.cpp");
+    // Code Generation using LLVM
+    LLVMCodeGen codegen;
+    codegen.compile(parser.getAST());
+    codegen.optimize();
+    
+    std::string obj_filename = "temp.o";
+    codegen.writeObjectFile(obj_filename);
+    
+    std::string out_binary = is_build_mode ? "app.out" : "run_tmp.out";
+    
+    std::string runtime_path = "runtime/libnpruntime.a";
+    {
+        std::ifstream check_file(runtime_path);
+        if (!check_file.good()) {
+            runtime_path = "/usr/local/lib/libnpruntime.a";
         }
-    } else {
-        // std::cout << "[np-lang] Compiling..." << std::endl;
-        codegen.generateCPlusPlus("run_tmp.cpp");
-        int compile_result = std::system("g++ -std=c++17 -O3 run_tmp.cpp -o run_tmp.out");
-        if (compile_result != 0) {
-            std::cerr << "[np-lang] C++ Compilation Failed! See errors above.\n";
-        } else {
-            // std::cout << "[np-lang] Running..." << std::endl;
-            std::string cmd = "./run_tmp.out";
-            for (const auto& arg : run_args) {
-                cmd += " \"" + arg + "\"";
-            }
-            std::system(cmd.c_str());
+    }
+    
+    // Link using g++
+    std::string link_cmd = "g++ " + obj_filename + " " + runtime_path + " -o " + out_binary + " -pthread";
+    int link_result = std::system(link_cmd.c_str());
+    
+    // Clean up temporary object file
+    std::remove(obj_filename.c_str());
+    
+    if (link_result != 0) {
+        std::cerr << "Error: Linking failed!\n";
+        return;
+    }
+    
+    if (!is_build_mode) {
+        // Run mode: execute the temporary binary and then delete it
+        std::string cmd = "./" + out_binary;
+        for (const auto& arg : run_args) {
+            cmd += " \"" + arg + "\"";
         }
-        std::remove("run_tmp.cpp");
-        std::remove("run_tmp.out");
+        int run_result = std::system(cmd.c_str());
+        (void)run_result;
+        std::remove(out_binary.c_str());
     }
 }
 
@@ -78,7 +91,6 @@ int main(int argc, char* argv[]) {
         }
         runPipeline(argv[2], true);
     } else {
-        // `./np main.np`
         std::vector<std::string> run_args;
         for (int i = 2; i < argc; ++i) {
             run_args.push_back(argv[i]);

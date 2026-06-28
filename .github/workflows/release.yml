@@ -1,0 +1,139 @@
+name: Release Build Pipeline
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    name: Build Linux Ubuntu Binary
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Install LLVM and Build Tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends build-essential llvm-dev
+
+      - name: Compile np Compiler and Runtime Library
+        run: |
+          make
+
+      - name: Create Release Package
+        run: |
+          mkdir -p dist
+          cp np dist/
+          cp runtime/libnpruntime.a dist/
+          tar -czf np-linux-amd64.tar.gz -C dist np libnpruntime.a
+
+      - name: Upload Linux Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: np-linux-amd64
+          path: np-linux-amd64.tar.gz
+
+  build-windows:
+    name: Build Windows Executable
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup MSYS2 with GCC and LLVM
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-make
+            mingw-w64-ucrt-x86_64-llvm
+
+      - name: Compile np Compiler and Runtime Library
+        run: |
+          make
+
+      - name: Create Release Package
+        shell: bash
+        run: |
+          mkdir -p dist
+          cp np.exe dist/
+          cp runtime/libnpruntime.a dist/
+          zip -j np-windows-amd64.zip dist/np.exe dist/libnpruntime.a
+
+      - name: Upload Windows Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: np-windows-amd64
+          path: np-windows-amd64.zip
+
+  build-linux-arm64:
+    name: Build Linux ARM64 Binary
+    runs-on: ubuntu-22.04-arm64
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Install LLVM and Build Tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends build-essential llvm-dev
+
+      - name: Compile np Compiler and Runtime Library
+        run: |
+          make
+
+      - name: Create Release Package
+        run: |
+          mkdir -p dist
+          cp np dist/
+          cp runtime/libnpruntime.a dist/
+          tar -czf np-linux-arm64.tar.gz -C dist np libnpruntime.a
+
+      - name: Upload Linux ARM64 Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: np-linux-arm64
+          path: np-linux-arm64.tar.gz
+
+  create-release:
+    name: Create GitHub Release
+    needs: [build-linux, build-windows, build-linux-arm64]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - name: Download Linux AMD64 Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: np-linux-amd64
+
+      - name: Download Windows Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: np-windows-amd64
+
+      - name: Download Linux ARM64 Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: np-linux-arm64
+
+      - name: Create GitHub Release and Upload Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            np-linux-amd64.tar.gz
+            np-windows-amd64.zip
+            np-linux-arm64.tar.gz
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

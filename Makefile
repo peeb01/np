@@ -1,13 +1,13 @@
-# Makefile for the np-lang Compiler
+# Makefile for the np-lang Compiler with LLVM Backend
 
-# Compiler and flags
 CXX      := g++
-# -O3 for max optimization, consistent with internal compiler calls
-CXXFLAGS := -std=c++17 -Wall -Wextra -I./include -O3
-LDFLAGS  :=
-TARGET   := np
+CXXFLAGS := -std=c++17 -Wall -Wextra -I./include -O3 $(shell llvm-config --cxxflags)
+LDFLAGS  := $(shell llvm-config --ldflags --system-libs --libs) -lpthread
 
-# For silent make by default (run `make V=1` for verbose output)
+TARGET   := np
+RUNTIME  := runtime/libnpruntime.a
+
+# Silent make
 ifndef V
     MAKEFLAGS += --silent
     Q = @
@@ -17,48 +17,39 @@ else
     ECHO_MSG = "%s\n"
 endif
 
-# Automatically find all .cpp source files in root and core/
-SRCS := $(wildcard core/*.cpp) main.cpp
+SRCS := core/lexer.cpp core/parser.cpp core/ast.cpp core/llvm_codegen.cpp core/codegen_expr.cpp core/codegen_stmt.cpp main.cpp
 OBJS := $(SRCS:.cpp=.o)
 
-# Default target: build the compiler
-all: $(TARGET)
+all: $(RUNTIME) $(TARGET)
 
-# Linking the final executable
+$(RUNTIME): runtime/npruntime.o runtime/npruntime_api.o
+	@printf $(ECHO_MSG) "AR" $(RUNTIME)
+	$(Q)ar rcs $(RUNTIME) runtime/npruntime.o runtime/npruntime_api.o
+
+runtime/npruntime.o: runtime/npruntime.cpp runtime/npruntime.hpp
+	@printf $(ECHO_MSG) "CXX" $<
+	$(Q)$(CXX) -std=c++17 -O3 -c $< -o $@
+
+runtime/npruntime_api.o: runtime/npruntime_api.cpp runtime/npruntime.hpp
+	@printf $(ECHO_MSG) "CXX" $<
+	$(Q)$(CXX) -std=c++17 -O3 -c $< -o $@
+
 $(TARGET): $(OBJS)
 	@printf $(ECHO_MSG) "LINK" $(TARGET)
 	$(Q)$(CXX) $(OBJS) -o $(TARGET) $(LDFLAGS)
 
-# Generic rule to compile .cpp files into .o files
-# This handles sources in the root directory and subdirectories like 'core'
 %.o: %.cpp
 	@printf $(ECHO_MSG) "CXX" $<
 	$(Q)$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# Clean up object files
 clean:
 	@printf $(ECHO_MSG) "CLEAN" "object files"
-	$(Q)rm -f $(OBJS)
+	$(Q)rm -f $(OBJS) runtime/npruntime.o runtime/npruntime_api.o
 
-# Full clean, including the final executable
 fclean: clean
 	@printf $(ECHO_MSG) "FCLEAN" $(TARGET)
-	$(Q)rm -f $(TARGET)
+	$(Q)rm -f $(TARGET) $(RUNTIME)
 
-# Rebuild the project from scratch
 re: fclean all
 
-# Capture all arguments passed after "run"
-ifeq (run,$(firstword $(MAKECMDGOALS)))
-  # Extract everything from the 2nd word onward
-  RUN_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
-  # Turn them into do-nothing targets so make doesn't complain
-  $(eval $(RUN_ARGS):;@:)
-endif
-
-# The run target using Docker
-run:
-	docker run --rm -it -v "$$PWD":/workspace pib21/np-lang:alpine-3.22 $(RUN_ARGS)
-
-# Phony targets are not files and should always be run
 .PHONY: all clean fclean re

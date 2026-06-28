@@ -1,0 +1,35 @@
+{
+  "name": "vscode-np",
+  "displayName": "np-lang support",
+  "description": "Syntax highlighting and language configuration for the np programming language.",
+  "version": "0.1.0",
+  "publisher": "peeb01",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "np",
+        "aliases": [
+          "np",
+          "np-lang"
+        ],
+        "extensions": [
+          ".np"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "np",
+        "scopeName": "source.np",
+        "path": "./syntaxes/np.tmLanguage.json"
+      }
+    ]
+  }
+}

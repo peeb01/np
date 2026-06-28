@@ -1,21 +1,27 @@
-# Stage 1: Build the 'np' compiler executable
-# We use a specific gcc version to ensure a consistent build environment.
-FROM gcc:11 AS builder
+# Stage 1: Build the 'np' compiler executable and static runtime
+FROM ubuntu:22.04 AS builder
 
-# Install build-time dependencies (make)
-RUN apt-get update && apt-get install -y make libgc-dev
+# Prevent interactive prompts during apt install
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install build-time dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    make \
+    llvm-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 # Set the working directory inside the container
 WORKDIR /app
 
-# Copy all source code into the container.
-# Copying Makefile and source directories separately helps leverage Docker's layer caching.
+# Copy all source code into the container
 COPY Makefile ./
 COPY include/ ./include/
 COPY core/ ./core/
+COPY runtime/ ./runtime/
 COPY main.cpp ./
 
-# Build the 'np' compiler executable using the Makefile
+# Build the 'np' compiler and npruntime library using the Makefile
 RUN make
 
 # ---
@@ -23,11 +29,13 @@ RUN make
 # Stage 2: Create the final, lean runtime image
 FROM ubuntu:22.04
 
+ENV DEBIAN_FRONTEND=noninteractive
+
 # Install runtime dependencies for the 'np' compiler.
-# 'g++' is needed because the np compiler invokes it to compile the generated C++ code.
-# 'libgc-dev' is needed because the generated code links against the Boehm GC.
+# 'g++' is needed because the np compiler invokes it to link generated LLVM objects.
+# 'llvm-dev' is needed for the LLVM shared libraries (libLLVM.so) required by the np compiler.
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends g++ libgc-dev && \
+    apt-get install -y --no-install-recommends g++ llvm-dev && \
     rm -rf /var/lib/apt/lists/*
 
 # Set the working directory for mounting code
@@ -35,6 +43,9 @@ WORKDIR /workspace
 
 # Copy the compiled 'np' binary to a global bin directory
 COPY --from=builder /app/np /usr/local/bin/np
+
+# Copy the compiled static runtime library to the global libs folder
+COPY --from=builder /app/runtime/libnpruntime.a /usr/local/lib/libnpruntime.a
 
 # Set the entrypoint to our compiler. This allows running the container
 # like an executable: `docker run <image_name> tests/main.np`

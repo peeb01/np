@@ -11,5 +11,8 @@ fn compute(int n) -> int:
     return total
 
 int n = 500000000
+float start_time = time_now()
 int res = compute(n)
+float end_time = time_now()
 print("Result:", res)
+print("Time taken:", end_time - start_time, "seconds")

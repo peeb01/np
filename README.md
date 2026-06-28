@@ -15,45 +15,27 @@ To understand the language features in detail, check out the following sub-docum
 
 ---
 
-## Translation Pipeline (How it works)
+## Compilation Pipeline (LLVM Backend)
 
-NP acts as an **Ahead-Of-Time (AOT) Transpiler (Source-to-Source Compiler)**. It compiles `.np` code into optimized standard C++17, which is then compiled into a native machine-code binary by GCC (`g++`).
+NP compiles `.np` source files directly to native machine-code binaries using the LLVM C++ API and a precompiled C-compatible runtime library (`runtime/libnpruntime.a`).
 
-```text
-   [ User Code ]
- +-----------------------+
- |   Source Code (.np)   |   e.g., main.np
- +-----------+-----------+
-             |
-             v
- +-----------+-----------+
- |     Lexer Phase       |   Scans raw text and splits it into Tokens.
- |  (Lexical Analysis)   |   (e.g., KEYWORD_FN, IDENTIFIER, INT)
- +-----------+-----------+
-             | (Tokens Stream)
-             v
- +-----------+-----------+
- |    Parser Phase       |   Syntax checking & Single-Pass
- | & Transpilation (C++) |   Direct Transpilation to C++ Strings.
- +-----------+-----------+
-             | (C++ Code String)
-             v
- +-----------+-----------+
- |    CodeGen Phase      |   Injects np-lang standard library and
- | (Code Generation)     |   writes to a temporary .cpp file.
- +-----------+-----------+
-             | (output_tmp.cpp)
-             v
- +-----------+-----------+
- |    C++ Compiler       |   Calls `g++ -O3 -std=c++17` to compile
- |    (GCC / g++)        |   the C++ code into Native Machine Code.
- +-----------+-----------+
-             |
-             v
- +-----------+-----------+
- |   Executable Binary   |   Final ready-to-run binary (app.out)
- +-----------------------+
+```mermaid
+graph TD
+    A[Source Code .np] --> B[Lexer]
+    B -->|Tokens| C[AST Parser]
+    C -->|Abstract Syntax Tree| D[LLVM CodeGen]
+    D -->|LLVM IR| E[LLVM Optimizer -O3]
+    E -->|Object File .o| F[Linker g++]
+    G[libnpruntime.a] --> F
+    F -->|Standalone Binary| H[Executable app.out / run_tmp.out]
 ```
+
+### Compilation Flow
+1. **Lexical Analysis (`core/lexer.cpp`)**: Scans source files into discrete tokens.
+2. **AST Parsing (`core/parser.cpp`)**: Parses tokens into an Abstract Syntax Tree (AST) representing the program structure.
+3. **LLVM CodeGen (`core/llvm_codegen.cpp`)**: Traverses the AST to generate LLVM Intermediate Representation (IR), optimizing it at the IR level (equivalent to `-O3`).
+4. **Target Emission**: Emits a native machine-code object file (`temp.o`).
+5. **Linking**: Links the object file with `runtime/libnpruntime.a` using `g++` to produce a standalone executable binary.
 
 ---
 
@@ -76,8 +58,8 @@ np build tests/advanced_features_test.np
 
 ## Core Mechanisms & Features
 
-### 1. Single-Pass Recursive Descent Parser
-NP uses a hand-written parser that translates syntax rules directly into C++ strings on the fly. This results in incredibly fast compilation times.
+### 1. AST-based Parser & LLVM CodeGen Backend
+NP uses a hand-written recursive descent parser to build an Abstract Syntax Tree (AST), which is then processed by an LLVM backend to generate highly optimized machine code directly. This yields near-instant compilation and true native execution performance.
 
 ### 2. Automatic Memory Management (Reference Counting / RAII)
 *   **Stack Allocation:** Primitive types (`int`, `float`, `bool`, `string`) are mapped to C++ primitives and stack-allocated, leaving no footprint.

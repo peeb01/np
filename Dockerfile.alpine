@@ -1,17 +1,20 @@
-# Stage 1: Build the 'np' compiler executable
+# Stage 1: Build the 'np' compiler executable and static runtime
 FROM alpine:3.22 AS builder
 
 # Install build-time dependencies
-RUN apk add --no-cache g++ make gc-dev
+RUN apk add --no-cache g++ make llvm-dev
 
 # Set the working directory
 WORKDIR /app
 
-# Copy source code and build the compiler
+# Copy all source code into the container
 COPY Makefile ./
 COPY include/ ./include/
 COPY core/ ./core/
+COPY runtime/ ./runtime/
 COPY main.cpp ./
+
+# Build the 'np' compiler and npruntime library using the Makefile
 RUN make
 
 # ---
@@ -20,15 +23,18 @@ RUN make
 FROM alpine:3.22
 
 # Install runtime dependencies
-# g++ is needed for the np compiler to transpile and run code.
-# gc-dev is the Boehm-GC package needed for the garbage collector linked in the generated code.
-RUN apk add --no-cache g++ gc-dev
+# g++ is needed for the np compiler to link generated LLVM objects.
+# llvm-dev is needed for the LLVM shared libraries (libLLVM.so) required by the np compiler.
+RUN apk add --no-cache g++ llvm-dev
 
 # Set the working directory for mounting code
 WORKDIR /workspace
 
 # Copy the compiled 'np' binary to a global bin directory
 COPY --from=builder /app/np /usr/local/bin/np
+
+# Copy the compiled static runtime library to the global libs folder
+COPY --from=builder /app/runtime/libnpruntime.a /usr/local/lib/libnpruntime.a
 
 # Set the entrypoint to our compiler
 ENTRYPOINT ["np"]
