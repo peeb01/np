@@ -444,4 +444,12 @@ extern "C" {
     void* np_rt_regex_find(void* pattern, void* text);
     void* np_rt_regex_replace(void* pattern, void* repl, void* text);
     void* np_rt_type_var(void* v);
+
+    // Networking Socket API
+    int64_t np_rt_net_listen(int64_t port);
+    int64_t np_rt_net_accept(int64_t server_fd);
+    int64_t np_rt_net_connect(void* host, int64_t port);
+    int64_t np_rt_net_send(int64_t socket_fd, void* data_str);
+    void* np_rt_net_recv(int64_t socket_fd, int64_t max_bytes);
+    void np_rt_net_close(int64_t socket_fd);
 }

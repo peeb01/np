@@ -113,6 +113,14 @@ void LLVMCodeGen::declareRuntime() {
     declareFunc("np_rt_regex_find", i8PtrTy, {i8PtrTy, i8PtrTy});
     declareFunc("np_rt_regex_replace", i8PtrTy, {i8PtrTy, i8PtrTy, i8PtrTy});
     declareFunc("np_rt_type_var", i8PtrTy, {i8PtrTy});
+
+    // Networking Socket API
+    declareFunc("np_rt_net_listen", i64Ty, {i64Ty});
+    declareFunc("np_rt_net_accept", i64Ty, {i64Ty});
+    declareFunc("np_rt_net_connect", i64Ty, {i8PtrTy, i64Ty});
+    declareFunc("np_rt_net_send", i64Ty, {i64Ty, i8PtrTy});
+    declareFunc("np_rt_net_recv", i8PtrTy, {i64Ty, i64Ty});
+    declareFunc("np_rt_net_close", voidTy, {i64Ty});
 }
 
 llvm::Type* LLVMCodeGen::getLLVMType(const std::string& np_type) {

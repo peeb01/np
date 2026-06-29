@@ -1,5 +1,29 @@
 #include "npruntime.hpp"
 #include <iostream>
+#include <vector>
+#include <cstring>
+
+#ifndef _WIN32
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <netdb.h>
+#else
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#endif
+
+#ifdef _WIN32
+static void ensure_winsock() {
+    static bool initialized = false;
+    if (!initialized) {
+        WSADATA wsaData;
+        WSAStartup(MAKEWORD(2, 2), &wsaData);
+        initialized = true;
+    }
+}
+#endif
 
 // ==========================================
 // 4. C-Compatible extern "C" Runtime API Implementation
@@ -225,5 +249,146 @@ extern "C" {
     }
     void* np_rt_type_var(void* v) {
         return new np_string(np_type(*static_cast<np_var*>(v)));
+    }
+
+    // Networking Socket API
+    int64_t np_rt_net_listen(int64_t port) {
+        #ifdef _WIN32
+        ensure_winsock();
+        SOCKET s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+        if (s == INVALID_SOCKET) return -1;
+        #else
+        int s = socket(AF_INET, SOCK_STREAM, 0);
+        if (s < 0) return -1;
+        #endif
+
+        int opt = 1;
+        #ifdef _WIN32
+        setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (const char*)&opt, sizeof(opt));
+        #else
+        setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+        #endif
+
+        sockaddr_in addr;
+        addr.sin_family = AF_INET;
+        addr.sin_addr.s_addr = INADDR_ANY;
+        addr.sin_port = htons(port);
+
+        #ifdef _WIN32
+        if (bind(s, (struct sockaddr*)&addr, sizeof(addr)) == SOCKET_ERROR) {
+            closesocket(s);
+            return -1;
+        }
+        if (listen(s, SOMAXCONN) == SOCKET_ERROR) {
+            closesocket(s);
+            return -1;
+        }
+        #else
+        if (bind(s, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+            close(s);
+            return -1;
+        }
+        if (listen(s, 128) < 0) {
+            close(s);
+            return -1;
+        }
+        #endif
+
+        return (int64_t)s;
+    }
+
+    int64_t np_rt_net_accept(int64_t server_fd) {
+        #ifdef _WIN32
+        SOCKET client = accept((SOCKET)server_fd, nullptr, nullptr);
+        if (client == INVALID_SOCKET) return -1;
+        #else
+        int client = accept((int)server_fd, nullptr, nullptr);
+        if (client < 0) return -1;
+        #endif
+        return (int64_t)client;
+    }
+
+    int64_t np_rt_net_connect(void* host_ptr, int64_t port) {
+        if (!host_ptr) return -1;
+        const std::string& host = *static_cast<np_string*>(host_ptr);
+
+        #ifdef _WIN32
+        ensure_winsock();
+        SOCKET s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+        if (s == INVALID_SOCKET) return -1;
+        #else
+        int s = socket(AF_INET, SOCK_STREAM, 0);
+        if (s < 0) return -1;
+        #endif
+
+        struct hostent* he = gethostbyname(host.c_str());
+        if (!he) {
+            #ifdef _WIN32
+            closesocket(s);
+            #else
+            close(s);
+            #endif
+            return -1;
+        }
+
+        sockaddr_in addr;
+        addr.sin_family = AF_INET;
+        addr.sin_port = htons(port);
+        std::memcpy(&addr.sin_addr, he->h_addr_list[0], he->h_length);
+
+        #ifdef _WIN32
+        if (connect(s, (struct sockaddr*)&addr, sizeof(addr)) == SOCKET_ERROR) {
+            closesocket(s);
+            return -1;
+        }
+        #else
+        if (connect(s, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+            close(s);
+            return -1;
+        }
+        #endif
+
+        return (int64_t)s;
+    }
+
+    int64_t np_rt_net_send(int64_t socket_fd, void* data_ptr) {
+        if (!data_ptr) return -1;
+        const std::string& data = *static_cast<np_string*>(data_ptr);
+
+        #ifdef _WIN32
+        int res = send((SOCKET)socket_fd, data.data(), (int)data.size(), 0);
+        if (res == SOCKET_ERROR) return -1;
+        #else
+        int res = send((int)socket_fd, data.data(), data.size(), 0);
+        if (res < 0) return -1;
+        #endif
+        return (int64_t)res;
+    }
+
+    void* np_rt_net_recv(int64_t socket_fd, int64_t max_bytes) {
+        if (max_bytes <= 0) return new np_string("");
+        std::vector<char> buffer(max_bytes);
+
+        #ifdef _WIN32
+        int bytes_read = recv((SOCKET)socket_fd, buffer.data(), (int)max_bytes, 0);
+        if (bytes_read == SOCKET_ERROR || bytes_read <= 0) {
+            return new np_string("");
+        }
+        #else
+        int bytes_read = recv((int)socket_fd, buffer.data(), max_bytes, 0);
+        if (bytes_read <= 0) {
+            return new np_string("");
+        }
+        #endif
+
+        return new np_string(buffer.data(), bytes_read);
+    }
+
+    void np_rt_net_close(int64_t socket_fd) {
+        #ifdef _WIN32
+        closesocket((SOCKET)socket_fd);
+        #else
+        close((int)socket_fd);
+        #endif
     }
 }
