@@ -1,31 +1,29 @@
 # Chapter 1: Introduction and Environment Setup
 
-NP is a high-level scripting language characterized by its clean, Python-like syntax. Behind the scenes, the NP compiler compiles `.np` code into optimized C++17, which is then compiled directly to native machine binaries by GCC. This provides a Python-like scripting experience with the raw performance of native C++, backed by an integrated Garbage Collector.
+NP is a high-level scripting language characterized by its clean, Python-like syntax. Behind the scenes, the NP compiler parses your source code and uses the **LLVM C++ API** to generate highly optimized machine-code instructions directly, combining it with a static C++ runtime library (`runtime/libnpruntime.a`). This provides a Python-like scripting experience with the raw execution speeds of native C++ and automatic reference counting.
 
 ---
 
 ## 1. Preparing Your System
 
-Before building the NP compiler, ensure your system has a C++ compiler and the Boehm GC library installed.
+Depending on whether you want to **develop the compiler itself** or **just write programs using NP**, the requirements are different:
 
-### For Ubuntu / Debian / WSL
-Run the following commands in your Terminal:
-```bash
-sudo apt-get update
-sudo apt-get install -y build-essential libgc-dev
-```
+### A. For Language Users (Writing NP Programs)
+If you download a pre-built release binary of the `np` compiler, you **DO NOT** need to install LLVM. You only need a standard C++ linker (like `g++` or `clang` from GCC/Clang) installed in your PATH to link final binaries.
+*   **Ubuntu / Debian / WSL**: `sudo apt-get install -y build-essential`
+*   **macOS**: Xcode Command Line Tools (`xcode-select --install`)
+*   **Windows**: MinGW-w64 (such as GCC/g++)
 
-### For macOS
-Install using Homebrew:
-```bash
-brew install bdw-gc gcc
-```
+### B. For Compiler Developers (Building the Compiler from Source)
+If you want to modify and compile the C++ source code of the `np` compiler itself, you need the LLVM development libraries:
+*   **Ubuntu / Debian / WSL**: `sudo apt-get install -y build-essential llvm-dev`
+*   **macOS**: `brew install llvm gcc`
 
 ---
 
-## 2. Compiling the NP Transpiler
+## 2. Compiling the NP Compiler (For Developers)
 
-Once the prerequisites are installed, clone the repository and run `make` inside the project root:
+If you are building the compiler from source, clone the repository and run `make` inside the project root:
 ```bash
 make re
 ```
@@ -49,7 +47,7 @@ Output:
 ```text
 Hello, World!
 ```
-*The transpiler converts the source code, compiles it into a temporary binary, executes it, and cleans up the temporary files automatically.*
+*The compiler translates the source code to LLVM IR, compiles it into a temporary binary, executes it, and cleans up the temporary files automatically.*
 
 ### Execution in Compilation Mode (Build)
 To compile your source code into a standalone native executable:

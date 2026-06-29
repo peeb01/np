@@ -6,9 +6,14 @@
 #include "../include/lexer.hpp"
 
 static std::string readFile(const std::string& filename) {
-    std::ifstream file(filename);
+    std::string path = filename;
+    std::ifstream file(path);
     if (!file.is_open()) {
-        std::cerr << "Error: Could not open file " << filename << "\n";
+        path = ".np_packages/" + filename;
+        file.open(path);
+    }
+    if (!file.is_open()) {
+        std::cerr << "Error: Could not open file " << filename << " (also checked .np_packages/" << filename << ")\n";
         exit(1);
     }
     std::stringstream buffer;

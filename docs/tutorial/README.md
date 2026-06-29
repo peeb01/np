@@ -7,7 +7,7 @@ Welcome to the NP programming book, designed to guide you step-by-step from abso
 ## Table of Contents
 
 1. [Chapter 1: Introduction and Environment Setup](chapter_01.md)
-   * Introduction to NP and its transpiler architecture.
+   * Introduction to NP and its LLVM compiler architecture.
    * Installing prerequisites and setting up the compiler.
    * Writing your first program (Hello World) and execution modes.
 
@@ -45,7 +45,7 @@ Welcome to the NP programming book, designed to guide you step-by-step from abso
 8. [Chapter 8: High-Precision Numerics and Large Projects](chapter_08.md)
    * 128-bit (int128) and 256-bit (int256) signed integers.
    * Multi-file projects using import.
-   * Under-the-hood memory management via Garbage Collection (Boehm GC).
+   * Under-the-hood memory management via Automatic Reference Counting (RAII).
 
 ---
 

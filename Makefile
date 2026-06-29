@@ -17,7 +17,7 @@ else
     ECHO_MSG = "%s\n"
 endif
 
-SRCS := core/lexer.cpp core/parser.cpp core/ast.cpp core/llvm_codegen.cpp core/codegen_expr.cpp core/codegen_stmt.cpp main.cpp
+SRCS := core/lexer.cpp core/parser.cpp core/ast.cpp core/llvm_codegen.cpp core/codegen_expr.cpp core/codegen_stmt.cpp core/package_manager.cpp main.cpp
 OBJS := $(SRCS:.cpp=.o)
 
 all: $(RUNTIME) $(TARGET)

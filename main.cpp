@@ -8,6 +8,7 @@
 #include "include/lexer.hpp"
 #include "include/parser.hpp"
 #include "include/llvm_codegen.hpp"
+#include "include/package_manager.hpp"
 #include <llvm/Support/raw_os_ostream.h>
 
 std::string readFile(const std::string& filename) {
@@ -79,12 +80,17 @@ int main(int argc, char* argv[]) {
         std::cout << "Usage:\n";
         std::cout << "  ./np <file.np>         (Run like Python)\n";
         std::cout << "  ./np build <file.np>   (Build binary like Go)\n";
+        std::cout << "  ./np get               (Install dependencies in np.req)\n";
+        std::cout << "  ./np install           (Alias for get)\n";
         return 1;
     }
 
     std::string arg1 = argv[1];
 
-    if (arg1 == "build") {
+    if (arg1 == "get" || arg1 == "install") {
+        getPackages();
+        return 0;
+    } else if (arg1 == "build") {
         if (argc < 3) {
             std::cerr << "Error: Please specify the entry file to build.\n";
             return 1;
