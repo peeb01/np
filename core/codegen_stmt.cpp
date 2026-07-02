@@ -49,7 +49,13 @@ llvm::Value* VarDeclStmtAST::codegen(LLVMCodeGen& g) {
                 } else if (v.type_name == "bool") {
                     g.Builder.CreateStore(llvm::ConstantInt::get(g.Context, llvm::APInt(1, 0)), alloca);
                 } else if (v.type_name == "array") {
-                    auto list = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_create_list"), {});
+                    llvm::Value* list = nullptr;
+                    if (v.size_expr) {
+                        auto sizeVal = v.size_expr->codegen(g);
+                        list = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_create_list_size"), {sizeVal});
+                    } else {
+                        list = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_create_list"), {});
+                    }
                     g.Builder.CreateStore(list, alloca);
                 } else if (v.type_name == "dict") {
                     auto dict = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_create_dict"), {});
@@ -100,10 +106,55 @@ llvm::Value* VarAssignStmtAST::codegen(LLVMCodeGen& g) {
         auto idxAccess = static_cast<IndexAccessExprAST*>(lvalue.get());
         auto cont = idxAccess->container->codegen(g);
         auto idx = idxAccess->index->codegen(g);
-        if (idx->getType()->isIntegerTy(64)) {
-            g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_set_index"), {cont, idx, rhsVal});
+        
+        llvm::Value* finalIdx = idx;
+        if (!idx->getType()->isIntegerTy(64)) {
+            finalIdx = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_string_c_str"), {idx});
+        }
+        
+        llvm::Value* varRhs = nullptr;
+        auto rhsType = rhsVal->getType();
+        if (rhsType->isIntegerTy(64)) {
+            varRhs = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_create_int"), {rhsVal});
+        } else if (rhsType->isDoubleTy()) {
+            varRhs = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_create_float"), {rhsVal});
+        } else if (rhsType->isIntegerTy(1)) {
+            varRhs = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_create_bool"), {rhsVal});
         } else {
-            g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_set_key"), {cont, idx, rhsVal});
+            bool isRhsString = false;
+            if (rvalue->getType() == ASTNodeType::STRING_LITERAL) isRhsString = true;
+            else if (rvalue->getType() == ASTNodeType::VARIABLE_EXPR) {
+                auto name = static_cast<VariableExprAST*>(rvalue.get())->name;
+                if (g.VariableTypes.count(name) && g.VariableTypes[name] == "string") isRhsString = true;
+            } else if (rvalue->getType() == ASTNodeType::CALL_EXPR) {
+                auto callee = static_cast<CallExprAST*>(rvalue.get())->callee;
+                if (callee == "string" || callee == "read_file" || callee == "input_string" || 
+                    callee == "time_format" || callee == "json_stringify" || 
+                    callee == "regex_find" || callee == "regex_replace" || callee == "net_recv") {
+                    isRhsString = true;
+                }
+            } else if (rvalue->getType() == ASTNodeType::SLICE_EXPR) {
+                auto slice = static_cast<SliceExprAST*>(rvalue.get());
+                bool containerIsString = false;
+                if (slice->container->getType() == ASTNodeType::STRING_LITERAL) containerIsString = true;
+                else if (slice->container->getType() == ASTNodeType::VARIABLE_EXPR) {
+                    auto name = static_cast<VariableExprAST*>(slice->container.get())->name;
+                    if (g.VariableTypes.count(name) && g.VariableTypes[name] == "string") containerIsString = true;
+                }
+                if (containerIsString) isRhsString = true;
+            }
+            
+            if (isRhsString) {
+                varRhs = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_create_string"), {rhsVal});
+            } else {
+                varRhs = rhsVal;
+            }
+        }
+        
+        if (idx->getType()->isIntegerTy(64)) {
+            g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_set_index"), {cont, finalIdx, varRhs});
+        } else {
+            g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_set_key"), {cont, finalIdx, varRhs});
         }
     }
     return nullptr;
@@ -230,6 +281,43 @@ llvm::Value* ForStmtAST::codegen(LLVMCodeGen& g) {
         }
         
         g.Builder.SetInsertPoint(loopExit);
+    } else {
+        auto collVal = collection->codegen(g);
+        auto lenVal = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_len"), {collVal});
+        
+        auto loopVarType = llvm::Type::getInt64Ty(g.Context);
+        auto idxAlloca = g.Builder.CreateAlloca(loopVarType, nullptr, "idx");
+        g.Builder.CreateStore(llvm::ConstantInt::get(g.Context, llvm::APInt(64, 0)), idxAlloca);
+        
+        auto varPtrType = llvm::PointerType::getUnqual(g.Context);
+        auto varAlloca = g.Builder.CreateAlloca(varPtrType, nullptr, var_name);
+        g.NamedValues[var_name] = varAlloca;
+        g.VariableTypes[var_name] = "np_var";
+        
+        auto loopHeader = llvm::BasicBlock::Create(g.Context, "forheader", parentF);
+        auto loopBody = llvm::BasicBlock::Create(g.Context, "forbody", parentF);
+        auto loopExit = llvm::BasicBlock::Create(g.Context, "forexit", parentF);
+        
+        g.Builder.CreateBr(loopHeader);
+        
+        g.Builder.SetInsertPoint(loopHeader);
+        auto curIdx = g.Builder.CreateLoad(loopVarType, idxAlloca, "curidx");
+        auto condVal = g.Builder.CreateICmpSLT(curIdx, lenVal, "loopcond");
+        g.Builder.CreateCondBr(condVal, loopBody, loopExit);
+        
+        g.Builder.SetInsertPoint(loopBody);
+        auto itemVal = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_get_index"), {collVal, curIdx});
+        g.Builder.CreateStore(itemVal, varAlloca);
+        
+        body->codegen(g);
+        
+        if (!g.Builder.GetInsertBlock()->getTerminator()) {
+            auto nextIdx = g.Builder.CreateAdd(curIdx, llvm::ConstantInt::get(g.Context, llvm::APInt(64, 1)), "nextidx");
+            g.Builder.CreateStore(nextIdx, idxAlloca);
+            g.Builder.CreateBr(loopHeader);
+        }
+        
+        g.Builder.SetInsertPoint(loopExit);
     }
     return nullptr;
 }
@@ -288,7 +376,47 @@ llvm::Value* FuncDeclStmtAST::codegen(LLVMCodeGen& g) {
 }
 
 llvm::Value* StructDeclStmtAST::codegen(LLVMCodeGen& g) {
-    return nullptr;
+    std::vector<llvm::Type*> argTys;
+    for (const auto& field : fields) {
+        argTys.push_back(g.getLLVMType(field.type));
+    }
+    
+    auto i8PtrTy = llvm::PointerType::getUnqual(g.Context);
+    auto ft = llvm::FunctionType::get(i8PtrTy, argTys, false);
+    auto f = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, name, g.TheModule);
+    
+    auto oldIP = g.Builder.saveIP();
+    auto block = llvm::BasicBlock::Create(g.Context, "entry", f);
+    g.Builder.SetInsertPoint(block);
+    
+    auto dictVal = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_create_dict"), {});
+    
+    auto argsIt = f->arg_begin();
+    for (size_t i = 0; i < fields.size(); ++i, ++argsIt) {
+        llvm::Value* argVal = &(*argsIt);
+        llvm::Value* varVal = nullptr;
+        std::string type = fields[i].type;
+        
+        if (type == "int" || type == "int32" || type == "int64") {
+            varVal = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_create_int"), {argVal});
+        } else if (type == "float" || type == "float32" || type == "float64") {
+            varVal = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_create_float"), {argVal});
+        } else if (type == "bool") {
+            varVal = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_create_bool"), {argVal});
+        } else if (type == "string") {
+            varVal = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_create_string"), {argVal});
+        } else {
+            varVal = argVal;
+        }
+        
+        auto strKey = g.Builder.CreateGlobalStringPtr(fields[i].name);
+        g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_set_key"), {dictVal, strKey, varVal});
+    }
+    
+    g.Builder.CreateRet(dictVal);
+    g.Builder.restoreIP(oldIP);
+    
+    return f;
 }
 
 llvm::Value* TryExceptStmtAST::codegen(LLVMCodeGen& g) {

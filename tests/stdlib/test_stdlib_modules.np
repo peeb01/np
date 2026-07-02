@@ -1,0 +1,17 @@
+import time
+import json
+
+print("Testing time module:")
+float now = time.now()
+print("Current timestamp is:")
+print(now)
+
+print("Testing json module:")
+dict data = {"name": "Bob", "age": 25}
+string data_str = json.stringify(data)
+print("Stringified JSON:")
+print(data_str)
+
+dict parsed = json.parse(data_str)
+print("Parsed age is:")
+print(parsed["age"])

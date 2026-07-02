@@ -1,0 +1,8 @@
+import "github.com/peeb01/pulsar"
+
+string req = make_request()
+string res = make_response()
+
+print("Unpacked from pulsar package:")
+print(req)
+print(res)

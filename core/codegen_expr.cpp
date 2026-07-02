@@ -21,6 +21,9 @@ llvm::Value* BoolExprAST::codegen(LLVMCodeGen& g) {
 llvm::Value* VariableExprAST::codegen(LLVMCodeGen& g) {
     auto alloca = g.NamedValues[name];
     if (!alloca) {
+        if (name == "sys_argv") {
+            return g.Builder.CreateCall(g.getRuntimeFunction("np_rt_sys_get_argv"), {});
+        }
         std::cerr << "Codegen Error: Reference to undefined variable " << name << "\n";
         exit(1);
     }
@@ -60,7 +63,7 @@ llvm::Value* BinaryExprAST::codegen(LLVMCodeGen& g) {
         return g.Builder.CreateFPToSI(res, llvm::Type::getInt64Ty(g.Context));
     }
     
-    if (isLFloat || isRFloat) {
+    if ((isLInt || isLFloat) && (isRInt || isRFloat) && (isLFloat || isRFloat)) {
         // Cast int to float if mixed
         if (isLInt) L = g.Builder.CreateSIToFP(L, llvm::Type::getDoubleTy(g.Context));
         if (isRInt) R = g.Builder.CreateSIToFP(R, llvm::Type::getDoubleTy(g.Context));
@@ -79,8 +82,62 @@ llvm::Value* BinaryExprAST::codegen(LLVMCodeGen& g) {
     }
     
     // Dynamic np_var promotions
-    auto vL = g.promoteToVar(L, isLInt ? "int" : (isLFloat ? "float" : "string"));
-    auto vR = g.promoteToVar(R, isRInt ? "int" : (isRFloat ? "float" : "string"));
+    bool isLVar = false;
+    if (L->getType()->isPointerTy()) {
+        isLVar = true;
+        if (lhs->getType() == ASTNodeType::STRING_LITERAL) isLVar = false;
+        else if (lhs->getType() == ASTNodeType::VARIABLE_EXPR) {
+            auto name = static_cast<VariableExprAST*>(lhs.get())->name;
+            if (g.VariableTypes.count(name) && g.VariableTypes[name] == "string") isLVar = false;
+        } else if (lhs->getType() == ASTNodeType::CALL_EXPR) {
+            auto callee = static_cast<CallExprAST*>(lhs.get())->callee;
+            if (callee == "string" || callee == "read_file" || callee == "input_string" || 
+                callee == "time_format" || callee == "json_stringify" || 
+                callee == "regex_find" || callee == "regex_replace" || callee == "net_recv") {
+                isLVar = false;
+            }
+        } else if (lhs->getType() == ASTNodeType::SLICE_EXPR) {
+            auto slice = static_cast<SliceExprAST*>(lhs.get());
+            bool containerIsString = false;
+            if (slice->container->getType() == ASTNodeType::STRING_LITERAL) containerIsString = true;
+            else if (slice->container->getType() == ASTNodeType::VARIABLE_EXPR) {
+                auto name = static_cast<VariableExprAST*>(slice->container.get())->name;
+                if (g.VariableTypes.count(name) && g.VariableTypes[name] == "string") containerIsString = true;
+            }
+            if (containerIsString) isLVar = false;
+        }
+    }
+    
+    bool isRVar = false;
+    if (R->getType()->isPointerTy()) {
+        isRVar = true;
+        if (rhs->getType() == ASTNodeType::STRING_LITERAL) isRVar = false;
+        else if (rhs->getType() == ASTNodeType::VARIABLE_EXPR) {
+            auto name = static_cast<VariableExprAST*>(rhs.get())->name;
+            if (g.VariableTypes.count(name) && g.VariableTypes[name] == "string") isRVar = false;
+        } else if (rhs->getType() == ASTNodeType::CALL_EXPR) {
+            auto callee = static_cast<CallExprAST*>(rhs.get())->callee;
+            if (callee == "string" || callee == "read_file" || callee == "input_string" || 
+                callee == "time_format" || callee == "json_stringify" || 
+                callee == "regex_find" || callee == "regex_replace" || callee == "net_recv") {
+                isRVar = false;
+            }
+        } else if (rhs->getType() == ASTNodeType::SLICE_EXPR) {
+            auto slice = static_cast<SliceExprAST*>(rhs.get());
+            bool containerIsString = false;
+            if (slice->container->getType() == ASTNodeType::STRING_LITERAL) containerIsString = true;
+            else if (slice->container->getType() == ASTNodeType::VARIABLE_EXPR) {
+                auto name = static_cast<VariableExprAST*>(slice->container.get())->name;
+                if (g.VariableTypes.count(name) && g.VariableTypes[name] == "string") containerIsString = true;
+            }
+            if (containerIsString) isRVar = false;
+        }
+    }
+    
+    bool isLBool = L->getType()->isIntegerTy(1);
+    bool isRBool = R->getType()->isIntegerTy(1);
+    auto vL = isLVar ? L : g.promoteToVar(L, isLInt ? "int" : (isLFloat ? "float" : (isLBool ? "bool" : "string")));
+    auto vR = isRVar ? R : g.promoteToVar(R, isRInt ? "int" : (isRFloat ? "float" : (isRBool ? "bool" : "string")));
     
     if (op == "+") return g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_add"), {vL, vR});
     if (op == "-") return g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_sub"), {vL, vR});
@@ -120,9 +177,21 @@ llvm::Value* CallExprAST::codegen(LLVMCodeGen& g) {
                     if (varType == "string") isString = true;
                 } else if (arg->getType() == ASTNodeType::CALL_EXPR) {
                     auto call = static_cast<CallExprAST*>(arg.get());
-                    if (call->callee == "type" || call->callee == "string" || call->callee == "input_string") {
+                    if (call->callee == "type" || call->callee == "string" || call->callee == "input_string" ||
+                        call->callee == "read_file" || call->callee == "time_format" || call->callee == "json_stringify" ||
+                        call->callee == "regex_find" || call->callee == "regex_replace" || call->callee == "net_recv") {
                         isString = true;
                     }
+                } else if (arg->getType() == ASTNodeType::SLICE_EXPR) {
+                    auto slice = static_cast<SliceExprAST*>(arg.get());
+                    bool containerIsString = false;
+                    if (slice->container->getType() == ASTNodeType::STRING_LITERAL) containerIsString = true;
+                    else if (slice->container->getType() == ASTNodeType::VARIABLE_EXPR) {
+                        auto name = static_cast<VariableExprAST*>(slice->container.get())->name;
+                        auto varType = g.VariableTypes[name];
+                        if (varType == "string") containerIsString = true;
+                    }
+                    if (containerIsString) isString = true;
                 }
                 
                 if (isString) {
@@ -218,13 +287,35 @@ llvm::Value* CallExprAST::codegen(LLVMCodeGen& g) {
             return g.Builder.CreateCall(g.getRuntimeFunction("np_rt_type_var"), {val});
         }
     }
+
+    if (callee == "len") {
+        auto val = args[0]->codegen(g);
+        bool isString = false;
+        if (args[0]->getType() == ASTNodeType::STRING_LITERAL) {
+            isString = true;
+        } else if (args[0]->getType() == ASTNodeType::VARIABLE_EXPR) {
+            auto name = static_cast<VariableExprAST*>(args[0].get())->name;
+            auto varType = g.VariableTypes[name];
+            if (varType == "string") isString = true;
+        }
+        
+        if (isString) {
+            return g.Builder.CreateCall(g.getRuntimeFunction("np_rt_string_len"), {val});
+        } else {
+            return g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_len"), {val});
+        }
+    }
+    
+    std::string actual_callee = callee;
+    if (callee == "json_marshal") actual_callee = "json_stringify";
+    else if (callee == "json_unmarshal") actual_callee = "json_parse";
     
     // Handle standard library calls
-    llvm::Function* CalleeF = g.TheModule.getFunction(callee);
+    llvm::Function* CalleeF = g.TheModule.getFunction(actual_callee);
     if (!CalleeF) {
         // Try built-ins in runtime cache
-        CalleeF = g.getRuntimeFunction("np_rt_" + callee);
-        if (!CalleeF) CalleeF = g.getRuntimeFunction(callee);
+        CalleeF = g.getRuntimeFunction("np_rt_" + actual_callee);
+        if (!CalleeF) CalleeF = g.getRuntimeFunction(actual_callee);
     }
     
     if (!CalleeF) {
@@ -246,7 +337,39 @@ llvm::Value* ListExprAST::codegen(LLVMCodeGen& g) {
     for (const auto& el : elements) {
         auto val = el->codegen(g);
         auto type = val->getType();
-        auto varVal = g.promoteToVar(val, type->isIntegerTy(64) ? "int" : (type->isDoubleTy() ? "float" : "string"));
+        
+        bool isVar = false;
+        if (type->isPointerTy()) {
+            isVar = true;
+            if (el->getType() == ASTNodeType::STRING_LITERAL) isVar = false;
+            else if (el->getType() == ASTNodeType::VARIABLE_EXPR) {
+                auto name = static_cast<VariableExprAST*>(el.get())->name;
+                if (g.VariableTypes.count(name) && g.VariableTypes[name] == "string") isVar = false;
+            } else if (el->getType() == ASTNodeType::CALL_EXPR) {
+                auto callee = static_cast<CallExprAST*>(el.get())->callee;
+                if (callee == "string" || callee == "read_file" || callee == "input_string" || 
+                    callee == "time_format" || callee == "json_stringify" || 
+                    callee == "regex_find" || callee == "regex_replace" || callee == "net_recv") {
+                    isVar = false;
+                }
+            } else if (el->getType() == ASTNodeType::SLICE_EXPR) {
+                auto slice = static_cast<SliceExprAST*>(el.get());
+                bool containerIsString = false;
+                if (slice->container->getType() == ASTNodeType::STRING_LITERAL) containerIsString = true;
+                else if (slice->container->getType() == ASTNodeType::VARIABLE_EXPR) {
+                    auto name = static_cast<VariableExprAST*>(slice->container.get())->name;
+                    if (g.VariableTypes.count(name) && g.VariableTypes[name] == "string") containerIsString = true;
+                }
+                if (containerIsString) isVar = false;
+            }
+        }
+        
+        llvm::Value* varVal = nullptr;
+        if (isVar) {
+            varVal = val;
+        } else {
+            varVal = g.promoteToVar(val, type->isIntegerTy(64) ? "int" : (type->isDoubleTy() ? "float" : (type->isIntegerTy(1) ? "bool" : "string")));
+        }
         g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_append"), {list, varVal});
     }
     return list;
@@ -258,9 +381,43 @@ llvm::Value* DictExprAST::codegen(LLVMCodeGen& g) {
         auto keyVal = k->codegen(g);
         auto valVal = v->codegen(g);
         auto typeV = valVal->getType();
-        auto varVal = g.promoteToVar(valVal, typeV->isIntegerTy(64) ? "int" : (typeV->isDoubleTy() ? "float" : "string"));
-        // Key should be string
-        g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_set_key"), {dict, keyVal, varVal});
+        
+        bool isVar = false;
+        if (typeV->isPointerTy()) {
+            isVar = true;
+            if (v->getType() == ASTNodeType::STRING_LITERAL) isVar = false;
+            else if (v->getType() == ASTNodeType::VARIABLE_EXPR) {
+                auto name = static_cast<VariableExprAST*>(v.get())->name;
+                if (g.VariableTypes.count(name) && g.VariableTypes[name] == "string") isVar = false;
+            } else if (v->getType() == ASTNodeType::CALL_EXPR) {
+                auto callee = static_cast<CallExprAST*>(v.get())->callee;
+                if (callee == "string" || callee == "read_file" || callee == "input_string" || 
+                    callee == "time_format" || callee == "json_stringify" || 
+                    callee == "regex_find" || callee == "regex_replace" || callee == "net_recv") {
+                    isVar = false;
+                }
+            } else if (v->getType() == ASTNodeType::SLICE_EXPR) {
+                auto slice = static_cast<SliceExprAST*>(v.get());
+                bool containerIsString = false;
+                if (slice->container->getType() == ASTNodeType::STRING_LITERAL) containerIsString = true;
+                else if (slice->container->getType() == ASTNodeType::VARIABLE_EXPR) {
+                    auto name = static_cast<VariableExprAST*>(slice->container.get())->name;
+                    if (g.VariableTypes.count(name) && g.VariableTypes[name] == "string") containerIsString = true;
+                }
+                if (containerIsString) isVar = false;
+            }
+        }
+        
+        llvm::Value* varVal = nullptr;
+        if (isVar) {
+            varVal = valVal;
+        } else {
+            varVal = g.promoteToVar(valVal, typeV->isIntegerTy(64) ? "int" : (typeV->isDoubleTy() ? "float" : (typeV->isIntegerTy(1) ? "bool" : "string")));
+        }
+        
+        // Key should be string converted to const char*
+        auto cStrKey = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_string_c_str"), {keyVal});
+        g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_set_key"), {dict, cStrKey, varVal});
     }
     return dict;
 }
@@ -272,7 +429,8 @@ llvm::Value* IndexAccessExprAST::codegen(LLVMCodeGen& g) {
     if (idxType->isIntegerTy(64)) {
         return g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_get_index"), {cont, idx});
     } else {
-        return g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_get_key"), {cont, idx});
+        auto cStrIdx = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_string_c_str"), {idx});
+        return g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_get_key"), {cont, cStrIdx});
     }
 }
 
@@ -280,6 +438,9 @@ llvm::Value* DotAccessExprAST::codegen(LLVMCodeGen& g) {
     auto objVal = object->codegen(g);
     if (member == "length" || member == "len") {
         return g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_len"), {objVal});
+    }
+    if (member == "shape") {
+        return g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_shape"), {objVal});
     }
     auto strMember = g.Builder.CreateGlobalStringPtr(member);
     return g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_get_key"), {objVal, strMember});
@@ -289,5 +450,38 @@ llvm::Value* ListCompExprAST::codegen(LLVMCodeGen& g) {
     // Generate list comprehension as a runtime loop building a list
     auto list = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_create_list"), {});
     return list;
+}
+
+llvm::Value* SliceExprAST::codegen(LLVMCodeGen& g) {
+    auto contVal = container->codegen(g);
+    
+    llvm::Value* startVal = nullptr;
+    if (start) {
+        startVal = start->codegen(g);
+    } else {
+        startVal = llvm::ConstantInt::get(g.Context, llvm::APInt(64, 0));
+    }
+    
+    llvm::Value* endVal = nullptr;
+    if (end) {
+        endVal = end->codegen(g);
+    } else {
+        endVal = llvm::ConstantInt::get(g.Context, llvm::APInt(64, -999999, true));
+    }
+    
+    bool isString = false;
+    if (container->getType() == ASTNodeType::STRING_LITERAL) {
+        isString = true;
+    } else if (container->getType() == ASTNodeType::VARIABLE_EXPR) {
+        auto name = static_cast<VariableExprAST*>(container.get())->name;
+        auto varType = g.VariableTypes[name];
+        if (varType == "string") isString = true;
+    }
+    
+    if (isString) {
+        return g.Builder.CreateCall(g.getRuntimeFunction("np_rt_string_slice"), {contVal, startVal, endVal});
+    } else {
+        return g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_slice"), {contVal, startVal, endVal});
+    }
 }
 

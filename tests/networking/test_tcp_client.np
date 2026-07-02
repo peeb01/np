@@ -1,0 +1,15 @@
+# TCP Client connecting to localhost:8080
+print("Connecting to server...")
+int client_fd = net_connect("127.0.0.1", 8080)
+if client_fd < 0:
+    throw "Error: Could not connect to server"
+
+print("Connected! Sending message...")
+net_send(client_fd, "hello")
+
+print("Waiting for response...")
+string response = net_recv(client_fd, 1024)
+print("Received from server: " + response)
+
+net_close(client_fd)
+print("Client exit.")

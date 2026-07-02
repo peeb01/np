@@ -52,6 +52,7 @@ void LLVMCodeGen::declareRuntime() {
     declareFunc("np_rt_var_create_string", i8PtrTy, {i8PtrTy});
     declareFunc("np_rt_var_create_bool", i8PtrTy, {i1Ty});
     declareFunc("np_rt_var_create_list", i8PtrTy, {});
+    declareFunc("np_rt_var_create_list_size", i8PtrTy, {i64Ty});
     declareFunc("np_rt_var_create_dict", i8PtrTy, {});
     declareFunc("np_rt_var_create_int128", i8PtrTy, {i8PtrTy});
     declareFunc("np_rt_var_create_int256", i8PtrTy, {i8PtrTy});
@@ -65,6 +66,7 @@ void LLVMCodeGen::declareRuntime() {
     declareFunc("np_rt_var_set_key", voidTy, {i8PtrTy, i8PtrTy, i8PtrTy});
     declareFunc("np_rt_var_len", i64Ty, {i8PtrTy});
     declareFunc("np_rt_var_slice", i8PtrTy, {i8PtrTy, i64Ty, i64Ty});
+    declareFunc("np_rt_var_shape", i8PtrTy, {i8PtrTy});
     
     // np_var Operators
     declareFunc("np_rt_var_add", i8PtrTy, {i8PtrTy, i8PtrTy});
@@ -113,6 +115,8 @@ void LLVMCodeGen::declareRuntime() {
     declareFunc("np_rt_regex_find", i8PtrTy, {i8PtrTy, i8PtrTy});
     declareFunc("np_rt_regex_replace", i8PtrTy, {i8PtrTy, i8PtrTy, i8PtrTy});
     declareFunc("np_rt_type_var", i8PtrTy, {i8PtrTy});
+    declareFunc("np_rt_read_file", i8PtrTy, {i8PtrTy});
+    declareFunc("np_rt_write_file", i64Ty, {i8PtrTy, i8PtrTy});
 
     // Networking Socket API
     declareFunc("np_rt_net_listen", i64Ty, {i64Ty});

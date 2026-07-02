@@ -68,6 +68,22 @@ void IndexAccessExprAST::print(int indent) const {
     index->print(indent + 1);
 }
 
+void SliceExprAST::print(int indent) const {
+    printIndent(indent);
+    std::cout << "[SliceExpr]\n";
+    container->print(indent + 1);
+    if (start) {
+        printIndent(indent + 1);
+        std::cout << "Start:\n";
+        start->print(indent + 2);
+    }
+    if (end) {
+        printIndent(indent + 1);
+        std::cout << "End:\n";
+        end->print(indent + 2);
+    }
+}
+
 void DotAccessExprAST::print(int indent) const {
     printIndent(indent);
     std::cout << "[DotAccessExpr] member: " << member << "\n";

@@ -1,0 +1,3 @@
+import "tests/imports/helper_library.np"
+print("Double of 50 is:")
+print(double_value(50))

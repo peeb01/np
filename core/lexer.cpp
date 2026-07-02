@@ -109,7 +109,29 @@ std::vector<Token> Lexer::tokenize() {
             advance(); // skip opening quote
             std::string str = "";
             while (peek() != '"' && peek() != '\0') {
-                str += advance();
+                if (peek() == '\\') {
+                    advance(); // skip '\\'
+                    if (peek() == 'n') {
+                        str += '\n';
+                        advance();
+                    } else if (peek() == 't') {
+                        str += '\t';
+                        advance();
+                    } else if (peek() == 'r') {
+                        str += '\r';
+                        advance();
+                    } else if (peek() == '"') {
+                        str += '"';
+                        advance();
+                    } else if (peek() == '\\') {
+                        str += '\\';
+                        advance();
+                    } else {
+                        str += '\\';
+                    }
+                } else {
+                    str += advance();
+                }
             }
             advance(); // skip closing quote
             tokens.push_back({TokenType::STRING_LITERAL, str, line});

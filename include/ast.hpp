@@ -39,7 +39,8 @@ enum class ASTNodeType {
     TRY_EXCEPT_STMT,
     THROW_STMT,
     IMPORT_STMT,
-    EXPR_STMT
+    EXPR_STMT,
+    SLICE_EXPR
 };
 
 // Base AST Node
@@ -157,6 +158,19 @@ public:
     void print(int indent) const override;
 };
 
+class SliceExprAST : public ExprAST {
+public:
+    std::unique_ptr<ExprAST> container;
+    std::unique_ptr<ExprAST> start;
+    std::unique_ptr<ExprAST> end;
+    
+    SliceExprAST(std::unique_ptr<ExprAST> container, std::unique_ptr<ExprAST> start, std::unique_ptr<ExprAST> end)
+        : container(std::move(container)), start(std::move(start)), end(std::move(end)) {}
+    ASTNodeType getType() const override { return ASTNodeType::SLICE_EXPR; }
+    llvm::Value* codegen(LLVMCodeGen& g) override;
+    void print(int indent) const override;
+};
+
 class DotAccessExprAST : public ExprAST {
 public:
     std::unique_ptr<ExprAST> object;
@@ -198,6 +212,20 @@ public:
 struct VarDeclItem {
     std::string type_name;
     std::string var_name;
+    std::unique_ptr<ExprAST> size_expr;
+
+    VarDeclItem(std::string type_name, std::string var_name, std::unique_ptr<ExprAST> size_expr = nullptr)
+        : type_name(std::move(type_name)), var_name(std::move(var_name)), size_expr(std::move(size_expr)) {}
+
+    VarDeclItem(VarDeclItem&& o) noexcept
+        : type_name(std::move(o.type_name)), var_name(std::move(o.var_name)), size_expr(std::move(o.size_expr)) {}
+
+    VarDeclItem& operator=(VarDeclItem&& o) noexcept {
+        type_name = std::move(o.type_name);
+        var_name = std::move(o.var_name);
+        size_expr = std::move(o.size_expr);
+        return *this;
+    }
 };
 
 // Statement Nodes

@@ -1,0 +1,10 @@
+import "github.com/peeb01/pulsar" as ps
+
+print("Calling ps.start_server:")
+string msg = ps.start_server(8080)
+print(msg)
+
+print("Creating ps.Server:")
+ps.Server s = ps.Server(8080)
+print("Server port is:")
+print(s.port)

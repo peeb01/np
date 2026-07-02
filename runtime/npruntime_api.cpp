@@ -80,6 +80,9 @@ extern "C" {
     void* np_rt_var_create_list() {
         return new np_var(std::vector<np_var>{});
     }
+    void* np_rt_var_create_list_size(int64_t size) {
+        return new np_var(std::vector<np_var>(size, np_var()));
+    }
     void* np_rt_var_create_dict() {
         return new np_var(std::map<std::string, np_var>{});
     }
@@ -117,6 +120,9 @@ extern "C" {
     }
     void* np_rt_var_slice(void* v, int64_t start, int64_t end) {
         return new np_var(static_cast<np_var*>(v)->slice(static_cast<int>(start), static_cast<int>(end)));
+    }
+    void* np_rt_var_shape(void* v) {
+        return new np_var(static_cast<np_var*>(v)->shape());
     }
 
     // Operators
@@ -214,6 +220,16 @@ extern "C" {
         std::string s;
         std::getline(std::cin, s);
         return new np_string(s);
+    }
+    void* np_rt_read_file(void* filename_str) {
+        std::string filename = *static_cast<np_string*>(filename_str);
+        std::string content = np_read_file(filename);
+        return new np_string(content);
+    }
+    int64_t np_rt_write_file(void* filename_str, void* content_str) {
+        std::string filename = *static_cast<np_string*>(filename_str);
+        std::string content = *static_cast<np_string*>(content_str);
+        return np_write_file(filename, content);
     }
 
     // Module functions

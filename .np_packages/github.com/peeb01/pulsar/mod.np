@@ -1,0 +1,5 @@
+struct Server:
+    int port
+
+fn start_server(int port) -> string:
+    return "Server started on port " + string(port)

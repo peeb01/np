@@ -1,0 +1,2 @@
+fn double_val(int v) -> int:
+    return v * 2

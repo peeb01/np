@@ -82,4 +82,43 @@ If you installed `github.com/peeb01/np` at branch `main`:
 import "github.com/peeb01/np/server.np"
 
 print("Remote library imported successfully!")
+
+---
+
+## 6. Directory Imports & Package Entry Points
+
+NP enforces a clean API design. To prevent application developers from needing to know a library's internal file structure, NP forbids importing individual internal files directly from outside the package. Instead, users import the package directory name, and the compiler automatically loads its entry point.
+
+### Entry Point Search Order
+When the compiler parses `import "my-package"`, it checks if `my-package` is a directory. If so, it looks inside that directory for one of the following files (in order) and imports it:
+1.  `mod.np`
+2.  `main.np`
+3.  `index.np`
+
+### Recommended Package Structure
+For a library named `github.com/peeb01/pulsar`, the author should define `mod.np` at the root of the repository as the public API gateway:
+
+#### **`.np_packages/github.com/peeb01/pulsar/mod.np`**:
+```python
+# Internal relative imports (managed by the package author)
+import "github.com/peeb01/pulsar/core/request.np"
+import "github.com/peeb01/pulsar/core/response.np"
+```
+
+#### **`.np_packages/github.com/peeb01/pulsar/core/request.np`**:
+```python
+fn make_request() -> string:
+    return "HttpRequestObject"
+```
+
+### Clean App Import Usage
+The user of the library only needs to write:
+```python
+import "github.com/peeb01/pulsar"
+
+string req = make_request()
+print(req)  # -> HttpRequestObject
+```
+No knowledge of `pulsar/core/request.np` is required by the user.
+
 ```

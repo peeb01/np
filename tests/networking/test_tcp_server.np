@@ -1,0 +1,22 @@
+# TCP Echo Server on port 8080
+int server_fd = net_listen(8080)
+if server_fd < 0:
+    throw "Error: Failed to listen on port 8080"
+
+print("Server is listening on port 8080...")
+
+# Accept a single client connection
+int client_fd = net_accept(server_fd)
+if client_fd >= 0:
+    print("Client connected!")
+    # Receive up to 1024 bytes
+    string request = net_recv(client_fd, 1024)
+    print("Received: " + request)
+    
+    # Send it back with "-echo" suffix
+    string response = request + "-echo"
+    net_send(client_fd, response)
+    net_close(client_fd)
+
+net_close(server_fd)
+print("Server shut down.")

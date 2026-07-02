@@ -9,17 +9,24 @@
 
 class Parser {
 public:
-    Parser(const std::vector<Token>& tokens);
+    Parser(const std::vector<Token>& tokens, const std::string& namespace_prefix = "");
     void parse();
     const std::vector<std::unique_ptr<ASTNode>>& getAST() const { return ast_root; }
+
+    std::unordered_map<std::string, std::string> variables;
+    std::unordered_map<std::string, std::vector<std::pair<std::string, std::string>>> structs;
 
 private:
     std::vector<Token> tokens;
     size_t pos;
     std::vector<std::unique_ptr<ASTNode>> ast_root;
-    std::unordered_map<std::string, std::string> variables;
-    std::unordered_map<std::string, std::vector<std::pair<std::string, std::string>>> structs;
     std::unordered_set<std::string> imported_modules;
+    std::string namespace_prefix;
+    bool is_inside_function;
+    std::unordered_set<std::string> local_variables;
+    std::unordered_set<std::string> import_aliases;
+
+    bool isBuiltIn(const std::string& name) const;
 
     Token peek(int offset = 0) const;
     Token advance();
