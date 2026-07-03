@@ -1,13 +1,17 @@
 #include "../include/package_manager.hpp"
+#include "../include/http_fetch.hpp"
+#include "../include/miniz.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <vector>
 #include <map>
+#include <unordered_set>
 #include <filesystem>
 #include <cstdlib>
 #include <algorithm>
+#include <cstring>
 #include <llvm/Support/SHA256.h>
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/StringRef.h>
@@ -169,4 +173,167 @@ void getPackages() {
     out_log_file.close();
     
     std::cout << "\nSuccess: Dependencies installed and verified successfully.\n";
+}
+
+bool isRemotePath(const std::string& path) {
+    return path.rfind("github.com/", 0) == 0 ||
+           path.rfind("gitlab.com/", 0) == 0 ||
+           path.rfind("bitbucket.org/", 0) == 0;
+}
+
+static std::string getRepoRoot(const std::string& pkg_path) {
+    std::stringstream ss(pkg_path);
+    std::string item;
+    std::vector<std::string> parts;
+    while (std::getline(ss, item, '/')) {
+        parts.push_back(item);
+    }
+    if (parts.size() >= 3) {
+        return parts[0] + "/" + parts[1] + "/" + parts[2];
+    }
+    return pkg_path;
+}
+
+static bool extractZip(const std::string& zip_file, const std::string& out_dir) {
+    mz_zip_archive zipArchive;
+    std::memset(&zipArchive, 0, sizeof(zipArchive));
+
+    if (!mz_zip_reader_init_file(&zipArchive, zip_file.c_str(), 0)) {
+        std::cerr << "Failed to open ZIP archive: " << zip_file << "\n";
+        return false;
+    }
+
+    int fileCount = (int)mz_zip_reader_get_num_files(&zipArchive);
+    for (int i = 0; i < fileCount; ++i) {
+        mz_zip_archive_file_stat fileStat;
+        if (!mz_zip_reader_file_stat(&zipArchive, i, &fileStat)) {
+            std::cerr << "Failed to get ZIP file stat at index: " << i << "\n";
+            continue;
+        }
+
+        std::string raw_name = fileStat.m_filename;
+        size_t slash_pos = raw_name.find('/');
+        if (slash_pos == std::string::npos) {
+            continue;
+        }
+        
+        std::string rel_path = raw_name.substr(slash_pos + 1);
+        if (rel_path.empty()) {
+            continue;
+        }
+
+        std::string outputFilePath = out_dir + "/" + rel_path;
+        
+        if (rel_path.back() == '/' || rel_path.back() == '\\') {
+            std::filesystem::create_directories(outputFilePath);
+            continue;
+        }
+
+        std::filesystem::create_directories(std::filesystem::path(outputFilePath).parent_path());
+        
+        if (!mz_zip_reader_extract_to_file(&zipArchive, i, outputFilePath.c_str(), 0)) {
+            std::cerr << "Failed to extract ZIP entry: " << raw_name << " to " << outputFilePath << "\n";
+        }
+    }
+
+    mz_zip_reader_end(&zipArchive);
+    return true;
+}
+
+bool downloadRemotePackage(const std::string& pkg_path) {
+    std::string repo_root = getRepoRoot(pkg_path);
+    static std::unordered_set<std::string> downloaded;
+    if (downloaded.count(repo_root) > 0) {
+        return false;
+    }
+    downloaded.insert(repo_root);
+
+    std::filesystem::path dest_dir = ".np_packages/" + repo_root;
+    std::filesystem::create_directories(".np_packages/.download_cache");
+    std::string temp_zip = ".np_packages/.download_cache/temp_pkg.zip";
+
+    size_t first_slash = repo_root.find('/');
+    if (first_slash == std::string::npos) return false;
+    std::string path_after_domain = repo_root.substr(first_slash + 1);
+    size_t second_slash = path_after_domain.find('/');
+    if (second_slash == std::string::npos) return false;
+    
+    std::string user = path_after_domain.substr(0, second_slash);
+    std::string repo = path_after_domain.substr(second_slash + 1);
+
+    std::cout << "Downloading package " << repo_root << " ...\n";
+    
+    std::string domain = repo_root.substr(0, first_slash);
+    std::string url;
+    bool success = false;
+    
+    if (domain == "github.com") {
+        url = "https://github.com/" + user + "/" + repo + "/archive/refs/heads/main.zip";
+        success = httpDownload(url, temp_zip);
+        if (!success) {
+            url = "https://github.com/" + user + "/" + repo + "/archive/refs/heads/master.zip";
+            success = httpDownload(url, temp_zip);
+        }
+    } else if (domain == "gitlab.com") {
+        url = "https://gitlab.com/" + user + "/" + repo + "/-/archive/main/" + repo + "-main.zip";
+        success = httpDownload(url, temp_zip);
+        if (!success) {
+            url = "https://gitlab.com/" + user + "/" + repo + "/-/archive/master/" + repo + "-master.zip";
+            success = httpDownload(url, temp_zip);
+        }
+    } else {
+        std::cerr << "Error: Unsupported remote repository hosting: " << domain << "\n";
+        return false;
+    }
+
+    if (!success) {
+        std::cerr << "Error: Failed to download remote package from " << repo_root << "\n";
+        return false;
+    }
+
+    std::filesystem::create_directories(dest_dir);
+    std::filesystem::remove_all(dest_dir);
+    std::filesystem::create_directories(dest_dir);
+
+    std::cout << "Extracting " << temp_zip << " to " << dest_dir.string() << " ...\n";
+    if (!extractZip(temp_zip, dest_dir.string())) {
+        std::cerr << "Error: Failed to extract ZIP archive for " << repo_root << "\n";
+        std::filesystem::remove(temp_zip);
+        return false;
+    }
+
+    std::filesystem::remove(temp_zip);
+    std::cout << "Successfully installed " << repo_root << "\n";
+
+    // Compute checksum hash and update np.req.log if possible
+    std::string computed_hash = "h1:" + computeDirectoryHash(dest_dir.string());
+    
+    std::map<std::pair<std::string, std::string>, std::string> logged_hashes;
+    std::ifstream log_file("np.req.log");
+    if (log_file.is_open()) {
+        std::string line;
+        while (std::getline(log_file, line)) {
+            line = trim(line);
+            if (line.empty() || line[0] == '#') continue;
+            std::stringstream ss(line);
+            std::string pkg, ver, hash;
+            if (ss >> pkg >> ver >> hash) {
+                logged_hashes[{pkg, ver}] = hash;
+            }
+        }
+        log_file.close();
+    }
+    
+    logged_hashes[{repo_root, "main"}] = computed_hash;
+
+    std::ofstream out_log_file("np.req.log");
+    if (out_log_file.is_open()) {
+        out_log_file << "# Auto-generated by np compiler package manager. DO NOT EDIT.\n";
+        for (const auto& [key, hash] : logged_hashes) {
+            out_log_file << key.first << " " << key.second << " " << hash << "\n";
+        }
+        out_log_file.close();
+    }
+
+    return true;
 }

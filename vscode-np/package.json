@@ -4,6 +4,10 @@
   "description": "Syntax highlighting and language configuration for the np programming language.",
   "version": "0.1.0",
   "publisher": "peeb01",
+  "main": "./extension.js",
+  "activationEvents": [
+    "onLanguage:np"
+  ],
   "engines": {
     "vscode": "^1.60.0"
   },
@@ -21,7 +25,16 @@
         "extensions": [
           ".np"
         ],
-        "configuration": "./language-configuration.json"
+        "filenames": [
+          "np.req",
+          "np.req.log",
+          "np"
+        ],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./image/NP.png",
+          "dark": "./image/NP.png"
+        }
       }
     ],
     "grammars": [

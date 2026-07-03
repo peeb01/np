@@ -35,7 +35,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # 'g++' is needed because the np compiler invokes it to link generated LLVM objects.
 # 'llvm-dev' is needed for the LLVM shared libraries (libLLVM.so) required by the np compiler.
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends g++ llvm-dev && \
+    apt-get install -y --no-install-recommends g++ llvm-dev curl && \
     rm -rf /var/lib/apt/lists/*
 
 # Set the working directory for mounting code

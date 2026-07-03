@@ -11,11 +11,17 @@ This extension adds syntax highlighting and basic language configuration support
 
 ## Installation
 
-### Method 1: Local Installation (Fastest)
+### Method 1: Auto-Setup Scripts (Recommended)
+
+Run the script inside this directory based on your OS:
+- **Windows**: Double-click `setup.bat` (or run it in Command Prompt/PowerShell)
+- **macOS / Linux / WSL**: Run `bash setup.sh` in your terminal
+
+### Method 2: Manual Local Installation
 
 1. Copy the `vscode-np` folder directly into your VS Code extensions folder:
-   - **Windows**: Copy to `%USERPROFILE%\.vscode\extensions\`
-   - **macOS / Linux**: Copy to `~/.vscode/extensions/`
+   - **Windows**: Copy to `%USERPROFILE%\.vscode\extensions\vscode-np`
+   - **macOS / Linux**: Copy to `~/.vscode/extensions/vscode-np`
 2. Restart or reload your VS Code editor.
 
 ### Method 2: Package and Install (VSIX)

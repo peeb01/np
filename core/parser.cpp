@@ -5,24 +5,51 @@
 #include <unordered_set>
 #include <filesystem>
 #include "../include/lexer.hpp"
+#include "../include/package_manager.hpp"
 
 static std::string readFile(const std::string& filename) {
     std::string path = filename;
     
-    // 1. Check if the local path exists and is a directory
-    if (std::filesystem::exists(path) && std::filesystem::is_directory(path)) {
-        if (std::filesystem::exists(path + "/mod.np")) path = path + "/mod.np";
-        else if (std::filesystem::exists(path + "/main.np")) path = path + "/main.np";
-        else if (std::filesystem::exists(path + "/index.np")) path = path + "/index.np";
-    } else {
-        // 2. Check if the file is not openable locally, then check .np_packages/
-        std::ifstream test_file(path);
-        if (!test_file.is_open()) {
-            std::string pkg_path = ".np_packages/" + filename;
-            if (std::filesystem::exists(pkg_path) && std::filesystem::is_directory(pkg_path)) {
-                if (std::filesystem::exists(pkg_path + "/mod.np")) path = pkg_path + "/mod.np";
-                else if (std::filesystem::exists(pkg_path + "/main.np")) path = pkg_path + "/main.np";
-                else if (std::filesystem::exists(pkg_path + "/index.np")) path = pkg_path + "/index.np";
+    auto resolvePath = [](const std::string& p) -> std::string {
+        if (std::filesystem::exists(p) && std::filesystem::is_directory(p)) {
+            std::filesystem::path path_obj(p);
+            std::string dir_name = path_obj.filename().string();
+            
+            // Check direct entry points
+            if (std::filesystem::exists(p + "/mod.np")) return p + "/mod.np";
+            if (std::filesystem::exists(p + "/main.np")) return p + "/main.np";
+            if (std::filesystem::exists(p + "/index.np")) return p + "/index.np";
+            if (std::filesystem::exists(p + "/" + dir_name + ".np")) return p + "/" + dir_name + ".np";
+            
+            // Check in subdirectory with the same name as the folder (e.g. repoName/repoName/)
+            std::string sub_p = p + "/" + dir_name;
+            if (std::filesystem::exists(sub_p) && std::filesystem::is_directory(sub_p)) {
+                if (std::filesystem::exists(sub_p + "/mod.np")) return sub_p + "/mod.np";
+                if (std::filesystem::exists(sub_p + "/main.np")) return sub_p + "/main.np";
+                if (std::filesystem::exists(sub_p + "/index.np")) return sub_p + "/index.np";
+                if (std::filesystem::exists(sub_p + "/" + dir_name + ".np")) return sub_p + "/" + dir_name + ".np";
+            }
+        }
+        return p;
+    };
+
+    path = resolvePath(path);
+
+    std::ifstream test_file(path);
+    if (!test_file.is_open()) {
+        std::string pkg_path = ".np_packages/" + filename;
+        pkg_path = resolvePath(pkg_path);
+        
+        std::ifstream test_pkg(pkg_path);
+        if (test_pkg.is_open()) {
+            path = pkg_path;
+        } else {
+            if (isRemotePath(filename)) {
+                if (downloadRemotePackage(filename)) {
+                    pkg_path = ".np_packages/" + filename;
+                    pkg_path = resolvePath(pkg_path);
+                    path = pkg_path;
+                }
             } else {
                 path = pkg_path;
             }
@@ -608,7 +635,8 @@ std::unique_ptr<StmtAST> Parser::parseStatement() {
                 std::string import_source = readFile(filename);
                 Lexer import_lexer(import_source);
                 std::vector<Token> import_tokens = import_lexer.tokenize();
-                Parser import_parser(import_tokens, alias);
+                std::string sub_alias = alias.empty() ? namespace_prefix : alias;
+                Parser import_parser(import_tokens, sub_alias);
                 import_parser.parse();
                 
                 // Merge AST, variables, and structs

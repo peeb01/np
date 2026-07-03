@@ -22,6 +22,9 @@
     },
     {
       "include": "#functions"
+    },
+    {
+      "include": "#variables"
     }
   ],
   "repository": {
@@ -63,15 +66,15 @@
       "patterns": [
         {
           "name": "keyword.control.np",
-          "match": "\\b(fn|if|elif|else|for|in|while|return|try|except|throw|import|range)\\b"
+          "match": "\\b(fn|if|elif|else|for|in|while|return|try|except|throw|import|range|struct|as)\\b"
         },
         {
           "name": "keyword.operator.logical.np",
           "match": "\\b(and|or|not)\\b"
         },
         {
-          "name": "keyword.other.np",
-          "match": "\\b(print)\\b"
+          "name": "support.function.np",
+          "match": "\\b(print|len|type|read_file|write_file|input_int|input_float|input_string|net_listen|net_accept|net_connect|net_send|net_recv|net_close|Exception)\\b"
         }
       ]
     },
@@ -79,7 +82,7 @@
       "patterns": [
         {
           "name": "storage.type.np",
-          "match": "\\b(int|float|string|bool|void|array|dict)\\b"
+          "match": "\\b(int|int32|int64|int128|int256|float|float32|float64|string|bool|void|array|dict)\\b"
         }
       ]
     },
@@ -110,7 +113,15 @@
           "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s*(?=\\()"
         }
       ]
+    },
+    "variables": {
+      "patterns": [
+        {
+          "name": "variable.other.np",
+          "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b"
+        }
+      ]
     }
-  ],
+  },
   "scopeName": "source.np"
 }

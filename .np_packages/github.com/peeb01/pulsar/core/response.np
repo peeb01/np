@@ -1,2 +1,0 @@
-fn make_response() -> string:
-    return "HttpResponseObject"
