@@ -14,10 +14,15 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      - name: Install LLVM and Build Tools
+      - name: Install LLVM 18 and Build Tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends build-essential llvm-dev
+          sudo apt-get install -y wget lsb-release software-properties-common gnupg build-essential
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 18
+          sudo apt-get install -y llvm-18-dev
+          sudo ln -sf /usr/bin/llvm-config-18 /usr/bin/llvm-config
 
       - name: Compile np Compiler and Runtime Library
         run: |
