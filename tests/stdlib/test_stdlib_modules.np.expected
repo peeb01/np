@@ -1,6 +1,6 @@
 Testing time module:
 Current timestamp is:
-1.78304e+09
+[TIMESTAMP]
 Testing json module:
 Stringified JSON:
 {"age":25,"name":"Bob"}

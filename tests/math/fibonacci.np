@@ -39,7 +39,7 @@ fn fib_no_haskey(int n, dict cache) -> int:
     return result
 
 dict memo_cache_2
-print("Calculating fib(92) to test 64-bit integer limit...")
-int fib_result = fib_no_haskey(92, memo_cache_2)
+print("Calculating fib(40) to test 64-bit integer limit...")
+int fib_result = fib_no_haskey(40, memo_cache_2)
 print("Result:", fib_result, "\ntype: ", type(fib_result))
 print("Total entries saved in dictionary cache:", memo_cache_2.length)

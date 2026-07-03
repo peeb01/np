@@ -15,6 +15,7 @@
 #include <llvm/Support/SHA256.h>
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/StringRef.h>
+#include <llvm/Config/llvm-config.h>
 
 static std::string computeDirectoryHash(const std::string& dir_path) {
     llvm::SHA256 hasher;
@@ -50,7 +51,13 @@ static std::string computeDirectoryHash(const std::string& dir_path) {
         }
     }
     
+#if LLVM_VERSION_MAJOR >= 15
     std::array<uint8_t, 32> hash_result = hasher.final();
+#else
+    llvm::StringRef hash_ref = hasher.final();
+    std::array<uint8_t, 32> hash_result;
+    std::memcpy(hash_result.data(), hash_ref.data(), 32);
+#endif
     
     // Convert to hex string (64 characters)
     std::string hex_str;

@@ -5,7 +5,12 @@
 #include <llvm/Target/TargetOptions.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/raw_ostream.h>
+#include <llvm/Config/llvm-config.h>
+#if LLVM_VERSION_MAJOR >= 17
 #include <llvm/TargetParser/Host.h>
+#else
+#include <llvm/Support/Host.h>
+#endif
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/Transforms/InstCombine/InstCombine.h>
 #include <llvm/Transforms/Scalar.h>
@@ -20,7 +25,8 @@ LLVMCodeGen::LLVMCodeGen()
 }
 
 void LLVMCodeGen::declareRuntime() {
-    auto i8PtrTy = llvm::PointerType::getUnqual(Context);
+    auto i8PtrTy = llvm::PointerType::get(llvm::Type::getInt8Ty(Context), 0);
+    auto i8PtrPtrTy = llvm::PointerType::get(i8PtrTy, 0);
     auto i64Ty = llvm::Type::getInt64Ty(Context);
     auto doubleTy = llvm::Type::getDoubleTy(Context);
     auto i1Ty = llvm::Type::getInt1Ty(Context);
@@ -104,8 +110,8 @@ void LLVMCodeGen::declareRuntime() {
     declareFunc("np_rt_input_string", i8PtrTy, {});
     
     // Modules
-    declareFunc("np_rt_sys_init_args", voidTy, {llvm::Type::getInt32Ty(Context), i8PtrTy});
-    declareFunc("np_rt_sys_get_argv", i8PtrTy, {});
+    declareFunc("np_rt_sys_init_args", voidTy, {llvm::Type::getInt32Ty(Context), i8PtrPtrTy});
+    declareFunc("np_rt_sys_get_argv", i8PtrPtrTy, {});
     declareFunc("np_rt_time_now", doubleTy, {});
     declareFunc("np_rt_time_sleep", voidTy, {doubleTy});
     declareFunc("np_rt_time_format", i8PtrTy, {doubleTy, i8PtrTy});
@@ -141,7 +147,7 @@ llvm::Type* LLVMCodeGen::getLLVMType(const std::string& np_type) {
         return llvm::Type::getInt1Ty(Context);
     }
     // String, array, dict, and structs map to pointers in our C runtime
-    return llvm::PointerType::getUnqual(Context);
+    return llvm::PointerType::get(llvm::Type::getInt8Ty(Context), 0);
 }
 
 llvm::Function* LLVMCodeGen::getRuntimeFunction(const std::string& name) {
@@ -167,7 +173,8 @@ llvm::Value* LLVMCodeGen::promoteToVar(llvm::Value* val, const std::string& type
 void LLVMCodeGen::compile(const std::vector<std::unique_ptr<ASTNode>>& ast) {
     // 1. Declare and setup the main function
     auto i32Ty = llvm::Type::getInt32Ty(Context);
-    auto i8PtrPtrTy = llvm::PointerType::getUnqual(Context); // char**
+    auto i8PtrTy = llvm::PointerType::get(llvm::Type::getInt8Ty(Context), 0);
+    auto i8PtrPtrTy = llvm::PointerType::get(i8PtrTy, 0); // char**
     auto mainFuncType = llvm::FunctionType::get(i32Ty, {i32Ty, i8PtrPtrTy}, false);
     auto mainFunc = llvm::Function::Create(mainFuncType, llvm::Function::ExternalLinkage, "main", TheModule);
     
@@ -217,7 +224,8 @@ void LLVMCodeGen::writeObjectFile(const std::string& filename) {
         exit(1);
     }
     
-    std::string Triple = llvm::sys::getDefaultTargetTriple();
+    std::string TripleStr = llvm::sys::getDefaultTargetTriple();
+    llvm::Triple Triple(TripleStr);
     
     llvm::InitializeAllTargetInfos();
     llvm::InitializeAllTargets();
@@ -226,7 +234,7 @@ void LLVMCodeGen::writeObjectFile(const std::string& filename) {
     llvm::InitializeAllAsmPrinters();
     
     std::string Error;
-    auto Target = llvm::TargetRegistry::lookupTarget(Triple, Error);
+    auto Target = llvm::TargetRegistry::lookupTarget(TripleStr, Error);
     if (!Target) {
         std::cerr << "LLVM Target Error: " << Error << "\n";
         exit(1);
@@ -235,11 +243,24 @@ void LLVMCodeGen::writeObjectFile(const std::string& filename) {
     std::string CPU = "generic";
     std::string Features = "";
     llvm::TargetOptions opt;
+#if LLVM_VERSION_MAJOR >= 16
     std::optional<llvm::Reloc::Model> RM = llvm::Reloc::PIC_;
+#else
+    llvm::Optional<llvm::Reloc::Model> RM = llvm::Reloc::PIC_;
+#endif
+
+#ifdef _WIN32
     auto TargetMachine = Target->createTargetMachine(Triple, CPU, Features, opt, RM);
+#else
+    auto TargetMachine = Target->createTargetMachine(TripleStr, CPU, Features, opt, RM);
+#endif
     
     TheModule.setDataLayout(TargetMachine->createDataLayout());
+#ifdef _WIN32
     TheModule.setTargetTriple(Triple);
+#else
+    TheModule.setTargetTriple(TripleStr);
+#endif
     
     std::error_code EC;
     llvm::raw_fd_ostream dest(filename, EC, llvm::sys::fs::OF_None);
@@ -249,7 +270,11 @@ void LLVMCodeGen::writeObjectFile(const std::string& filename) {
     }
     
     llvm::legacy::PassManager pass;
+#if LLVM_VERSION_MAJOR >= 16
     auto FileType = llvm::CodeGenFileType::ObjectFile;
+#else
+    auto FileType = llvm::CGFT_ObjectFile;
+#endif
     if (TargetMachine->addPassesToEmitFile(pass, dest, nullptr, FileType)) {
         std::cerr << "TargetMachine can't emit a file of this type\n";
         exit(1);

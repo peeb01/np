@@ -5,7 +5,7 @@ Argument 0 (executable):
 ./run_tmp.out
 --- Test time module ---
 Current timestamp:
-1.78304e+09
+[TIMESTAMP]
 Sleeping for 0.1 seconds...
 Elapsed: >= 0.1s?
 true

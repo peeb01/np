@@ -61,7 +61,7 @@ llvm::Value* VarDeclStmtAST::codegen(LLVMCodeGen& g) {
                     auto dict = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_create_dict"), {});
                     g.Builder.CreateStore(dict, alloca);
                 } else {
-                    g.Builder.CreateStore(llvm::ConstantPointerNull::get(llvm::PointerType::getUnqual(g.Context)), alloca);
+                    g.Builder.CreateStore(llvm::ConstantPointerNull::get(llvm::PointerType::get(llvm::Type::getInt8Ty(g.Context), 0)), alloca);
                 }
             }
         }
@@ -207,7 +207,7 @@ llvm::Value* IfStmtAST::codegen(LLVMCodeGen& g) {
     }
     
     // Emit else block
-    parentF->insert(parentF->end(), elseBB);
+    elseBB->insertInto(parentF);
     g.Builder.SetInsertPoint(elseBB);
     if (else_block) {
         else_block->codegen(g);
@@ -217,7 +217,7 @@ llvm::Value* IfStmtAST::codegen(LLVMCodeGen& g) {
     }
     
     // Emit merge block
-    parentF->insert(parentF->end(), mergeBB);
+    mergeBB->insertInto(parentF);
     g.Builder.SetInsertPoint(mergeBB);
     
     return nullptr;
@@ -289,7 +289,7 @@ llvm::Value* ForStmtAST::codegen(LLVMCodeGen& g) {
         auto idxAlloca = g.Builder.CreateAlloca(loopVarType, nullptr, "idx");
         g.Builder.CreateStore(llvm::ConstantInt::get(g.Context, llvm::APInt(64, 0)), idxAlloca);
         
-        auto varPtrType = llvm::PointerType::getUnqual(g.Context);
+        auto varPtrType = llvm::PointerType::get(llvm::Type::getInt8Ty(g.Context), 0);
         auto varAlloca = g.Builder.CreateAlloca(varPtrType, nullptr, var_name);
         g.NamedValues[var_name] = varAlloca;
         g.VariableTypes[var_name] = "np_var";
@@ -368,7 +368,7 @@ llvm::Value* FuncDeclStmtAST::codegen(LLVMCodeGen& g) {
             g.Builder.CreateRetVoid();
         } else {
             // Default return value
-            g.Builder.CreateRet(llvm::ConstantPointerNull::get(llvm::PointerType::getUnqual(g.Context)));
+             g.Builder.CreateRet(llvm::ConstantPointerNull::get(llvm::PointerType::get(llvm::Type::getInt8Ty(g.Context), 0)));
         }
     }
     
@@ -381,7 +381,7 @@ llvm::Value* StructDeclStmtAST::codegen(LLVMCodeGen& g) {
         argTys.push_back(g.getLLVMType(field.type));
     }
     
-    auto i8PtrTy = llvm::PointerType::getUnqual(g.Context);
+    auto i8PtrTy = llvm::PointerType::get(llvm::Type::getInt8Ty(g.Context), 0);
     auto ft = llvm::FunctionType::get(i8PtrTy, argTys, false);
     auto f = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, name, g.TheModule);
     

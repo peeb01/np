@@ -1,7 +1,8 @@
 # Makefile for the np-lang Compiler with LLVM Backend
 
 CXX      := g++
-CXXFLAGS := -std=c++17 -Wall -Wextra -I./include -O3 $(shell llvm-config --cxxflags | sed 's/-I/-isystem /g')
+LLVM_CXXFLAGS := $(shell llvm-config --cxxflags)
+CXXFLAGS := -Wall -Wextra -Wno-unused-parameter -I./include -O3 $(LLVM_CXXFLAGS) -std=c++17
 LDFLAGS  := $(shell llvm-config --ldflags --system-libs --libs) -lpthread
 
 TARGET   := np

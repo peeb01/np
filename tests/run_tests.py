@@ -42,6 +42,10 @@ def normalize_output(text):
     # Mask pointer-like large integers (12 or more digits, optional minus sign)
     # E.g. 106015486695376, 3868996801937078784, -1977849499002537472
     text = re.sub(r'-?\b\d{12,}\b', '[PTR]', text)
+    # Mask scientific notation timestamps like 1.78304e+09
+    text = re.sub(r'\b1\.\d+e\+09\b', '[TIMESTAMP]', text)
+    # Mask standard epoch timestamps like 1719... or 178...
+    text = re.sub(r'\b17\d{8,9}\b', '[TIMESTAMP]', text)
     return text
 
 def main():
