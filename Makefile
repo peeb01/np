@@ -3,7 +3,20 @@
 CXX      := g++
 LLVM_CXXFLAGS := $(shell llvm-config --cxxflags)
 CXXFLAGS := -Wall -Wextra -Wno-unused-parameter -I./include -O3 $(LLVM_CXXFLAGS) -std=c++17
-LDFLAGS  := $(shell llvm-config --ldflags --system-libs --libs) -lpthread
+
+# Detect operating system for linker flags
+OS := $(shell uname -s 2>/dev/null || echo Windows)
+
+ifeq ($(findstring NT,$(OS)),NT)
+    # Windows MSYS2 / MinGW - link runtime libraries statically to make np.exe standalone
+    LDFLAGS  := $(shell llvm-config --ldflags --system-libs --libs) -lpthread -static -static-libgcc -static-libstdc++
+else ifeq ($(findstring MINGW,$(OS)),MINGW)
+    # Windows MINGW fallback
+    LDFLAGS  := $(shell llvm-config --ldflags --system-libs --libs) -lpthread -static -static-libgcc -static-libstdc++
+else
+    # Linux / macOS
+    LDFLAGS  := $(shell llvm-config --ldflags --system-libs --libs) -lpthread
+endif
 
 TARGET   := np
 RUNTIME  := runtime/libnpruntime.a
