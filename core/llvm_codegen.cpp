@@ -241,7 +241,12 @@ void LLVMCodeGen::writeObjectFile(const std::string& filename) {
     std::string CPU = "generic";
     std::string Features = "";
     llvm::TargetOptions opt;
+#if LLVM_VERSION_MAJOR >= 16
     std::optional<llvm::Reloc::Model> RM = llvm::Reloc::PIC_;
+#else
+    llvm::Optional<llvm::Reloc::Model> RM = llvm::Reloc::PIC_;
+#endif
+
 #ifdef _WIN32
     auto TargetMachine = Target->createTargetMachine(Triple, CPU, Features, opt, RM);
 #else
@@ -263,7 +268,11 @@ void LLVMCodeGen::writeObjectFile(const std::string& filename) {
     }
     
     llvm::legacy::PassManager pass;
+#if LLVM_VERSION_MAJOR >= 16
     auto FileType = llvm::CodeGenFileType::ObjectFile;
+#else
+    auto FileType = llvm::CGFT_ObjectFile;
+#endif
     if (TargetMachine->addPassesToEmitFile(pass, dest, nullptr, FileType)) {
         std::cerr << "TargetMachine can't emit a file of this type\n";
         exit(1);
