@@ -58,7 +58,7 @@ jobs:
 
       - name: Compile np Compiler and Runtime Library
         run: |
-          make NO_TEST=1
+          mingw32-make NO_TEST=1
 
       - name: Create Release Package
         shell: bash
