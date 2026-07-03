@@ -25,7 +25,8 @@ LLVMCodeGen::LLVMCodeGen()
 }
 
 void LLVMCodeGen::declareRuntime() {
-    auto i8PtrTy = llvm::PointerType::getUnqual(Context);
+    auto i8PtrTy = llvm::PointerType::get(llvm::Type::getInt8Ty(Context), 0);
+    auto i8PtrPtrTy = llvm::PointerType::get(i8PtrTy, 0);
     auto i64Ty = llvm::Type::getInt64Ty(Context);
     auto doubleTy = llvm::Type::getDoubleTy(Context);
     auto i1Ty = llvm::Type::getInt1Ty(Context);
@@ -109,8 +110,8 @@ void LLVMCodeGen::declareRuntime() {
     declareFunc("np_rt_input_string", i8PtrTy, {});
     
     // Modules
-    declareFunc("np_rt_sys_init_args", voidTy, {llvm::Type::getInt32Ty(Context), i8PtrTy});
-    declareFunc("np_rt_sys_get_argv", i8PtrTy, {});
+    declareFunc("np_rt_sys_init_args", voidTy, {llvm::Type::getInt32Ty(Context), i8PtrPtrTy});
+    declareFunc("np_rt_sys_get_argv", i8PtrPtrTy, {});
     declareFunc("np_rt_time_now", doubleTy, {});
     declareFunc("np_rt_time_sleep", voidTy, {doubleTy});
     declareFunc("np_rt_time_format", i8PtrTy, {doubleTy, i8PtrTy});
@@ -146,7 +147,7 @@ llvm::Type* LLVMCodeGen::getLLVMType(const std::string& np_type) {
         return llvm::Type::getInt1Ty(Context);
     }
     // String, array, dict, and structs map to pointers in our C runtime
-    return llvm::PointerType::getUnqual(Context);
+    return llvm::PointerType::get(llvm::Type::getInt8Ty(Context), 0);
 }
 
 llvm::Function* LLVMCodeGen::getRuntimeFunction(const std::string& name) {
@@ -172,7 +173,8 @@ llvm::Value* LLVMCodeGen::promoteToVar(llvm::Value* val, const std::string& type
 void LLVMCodeGen::compile(const std::vector<std::unique_ptr<ASTNode>>& ast) {
     // 1. Declare and setup the main function
     auto i32Ty = llvm::Type::getInt32Ty(Context);
-    auto i8PtrPtrTy = llvm::PointerType::getUnqual(Context); // char**
+    auto i8PtrTy = llvm::PointerType::get(llvm::Type::getInt8Ty(Context), 0);
+    auto i8PtrPtrTy = llvm::PointerType::get(i8PtrTy, 0); // char**
     auto mainFuncType = llvm::FunctionType::get(i32Ty, {i32Ty, i8PtrPtrTy}, false);
     auto mainFunc = llvm::Function::Create(mainFuncType, llvm::Function::ExternalLinkage, "main", TheModule);
     
