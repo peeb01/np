@@ -1,9 +1,9 @@
 --- Fibonacci without has_key() ---
-Calculating fib(92) to test 64-bit integer limit...
+Calculating fib(40) to test 64-bit integer limit...
 Result:
--2652057667
+102334155
 
 type: 
 int
 Total entries saved in dictionary cache:
-91
+39
