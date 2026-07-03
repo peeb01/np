@@ -5,7 +5,12 @@
 #include <llvm/Target/TargetOptions.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/raw_ostream.h>
+#include <llvm/Config/llvm-config.h>
+#if LLVM_VERSION_MAJOR >= 17
 #include <llvm/TargetParser/Host.h>
+#else
+#include <llvm/Support/Host.h>
+#endif
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/Transforms/InstCombine/InstCombine.h>
 #include <llvm/Transforms/Scalar.h>

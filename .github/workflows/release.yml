@@ -61,12 +61,11 @@ jobs:
           mingw32-make NO_TEST=1
 
       - name: Create Release Package
-        shell: bash
+        shell: pwsh
         run: |
-          mkdir -p dist
-          cp np.exe dist/
-          cp runtime/libnpruntime.a dist/
-          zip -j np-windows-amd64.zip dist/np.exe dist/libnpruntime.a
+          New-Item -ItemType Directory -Force -Path dist
+          Copy-Item -Path np.exe, runtime/libnpruntime.a -Destination dist/
+          Compress-Archive -Path dist/np.exe, dist/libnpruntime.a -DestinationPath np-windows-amd64.zip -Force
 
       - name: Upload Windows Artifact
         uses: actions/upload-artifact@v4
