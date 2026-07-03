@@ -207,7 +207,7 @@ llvm::Value* IfStmtAST::codegen(LLVMCodeGen& g) {
     }
     
     // Emit else block
-    parentF->insert(parentF->end(), elseBB);
+    elseBB->insertInto(parentF);
     g.Builder.SetInsertPoint(elseBB);
     if (else_block) {
         else_block->codegen(g);
@@ -217,7 +217,7 @@ llvm::Value* IfStmtAST::codegen(LLVMCodeGen& g) {
     }
     
     // Emit merge block
-    parentF->insert(parentF->end(), mergeBB);
+    mergeBB->insertInto(parentF);
     g.Builder.SetInsertPoint(mergeBB);
     
     return nullptr;
