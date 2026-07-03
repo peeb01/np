@@ -217,7 +217,8 @@ void LLVMCodeGen::writeObjectFile(const std::string& filename) {
         exit(1);
     }
     
-    std::string Triple = llvm::sys::getDefaultTargetTriple();
+    std::string TripleStr = llvm::sys::getDefaultTargetTriple();
+    llvm::Triple Triple(TripleStr);
     
     llvm::InitializeAllTargetInfos();
     llvm::InitializeAllTargets();
@@ -226,7 +227,7 @@ void LLVMCodeGen::writeObjectFile(const std::string& filename) {
     llvm::InitializeAllAsmPrinters();
     
     std::string Error;
-    auto Target = llvm::TargetRegistry::lookupTarget(Triple, Error);
+    auto Target = llvm::TargetRegistry::lookupTarget(TripleStr, Error);
     if (!Target) {
         std::cerr << "LLVM Target Error: " << Error << "\n";
         exit(1);
@@ -236,10 +237,18 @@ void LLVMCodeGen::writeObjectFile(const std::string& filename) {
     std::string Features = "";
     llvm::TargetOptions opt;
     std::optional<llvm::Reloc::Model> RM = llvm::Reloc::PIC_;
+#ifdef _WIN32
     auto TargetMachine = Target->createTargetMachine(Triple, CPU, Features, opt, RM);
+#else
+    auto TargetMachine = Target->createTargetMachine(TripleStr, CPU, Features, opt, RM);
+#endif
     
     TheModule.setDataLayout(TargetMachine->createDataLayout());
+#ifdef _WIN32
     TheModule.setTargetTriple(Triple);
+#else
+    TheModule.setTargetTriple(TripleStr);
+#endif
     
     std::error_code EC;
     llvm::raw_fd_ostream dest(filename, EC, llvm::sys::fs::OF_None);

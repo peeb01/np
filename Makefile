@@ -1,22 +1,8 @@
 # Makefile for the np-lang Compiler with LLVM Backend
 
 CXX      := g++
-
-# Detect operating system
-OS := $(shell uname -s 2>/dev/null || echo Windows)
-
-ifeq ($(findstring NT,$(OS)),NT)
-    # Windows MSYS2 / MinGW
-    LLVM_CXXFLAGS := $(shell llvm-config --cxxflags)
-else ifeq ($(findstring MINGW,$(OS)),MINGW)
-    # Windows MINGW fallback
-    LLVM_CXXFLAGS := $(shell llvm-config --cxxflags)
-else
-    # Linux / macOS (safe to replace -I with -isystem to suppress warnings)
-    LLVM_CXXFLAGS := $(shell llvm-config --cxxflags | sed 's/-I/-isystem /g')
-endif
-
-CXXFLAGS := -Wall -Wextra -I./include -O3 $(LLVM_CXXFLAGS) -std=c++17
+LLVM_CXXFLAGS := $(shell llvm-config --cxxflags)
+CXXFLAGS := -Wall -Wextra -Wno-unused-parameter -I./include -O3 $(LLVM_CXXFLAGS) -std=c++17
 LDFLAGS  := $(shell llvm-config --ldflags --system-libs --libs) -lpthread
 
 TARGET   := np
