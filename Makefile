@@ -21,8 +21,10 @@ SRCS := core/lexer.cpp core/parser.cpp core/ast.cpp core/llvm_codegen.cpp core/c
 OBJS := $(SRCS:.cpp=.o)
 
 all: $(RUNTIME) $(TARGET)
+ifndef NO_TEST
 	@echo "Running core tests..."
 	$(Q)python3 tests/run_tests.py
+endif
 	-$(Q)cp -f $(TARGET) /usr/local/bin/$(TARGET) 2>/dev/null && cp -f $(RUNTIME) /usr/local/lib/libnpruntime.a 2>/dev/null && printf "  UPDATE    global installation\n" || true
 
 $(RUNTIME): runtime/npruntime.o runtime/npruntime_api.o
