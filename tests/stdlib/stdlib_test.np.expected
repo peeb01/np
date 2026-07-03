@@ -1,0 +1,40 @@
+--- Test sys.argv ---
+Number of arguments:
+1
+Argument 0 (executable):
+./run_tmp.out
+--- Test time module ---
+Current timestamp:
+1.78304e+09
+Sleeping for 0.1 seconds...
+Elapsed: >= 0.1s?
+true
+Formatted time len > 0?
+true
+--- Test json module ---
+Serialized JSON length > 0?
+true
+Parsed age == 30?
+true
+Parsed is_admin == true?
+true
+Parsed verification status == false?
+true
+Parsed ratio == 1.25?
+true
+Parsed scores len == 3?
+true
+Parsed scores[0] == 95?
+true
+Parsed alias age == 30?
+true
+--- Test regex module ---
+Is email match?
+true
+Is invalid email match?
+true
+Found phone number:
+123-456-7890
+Replaced text:
+My phone number is XXX-XXX-XXXX.
+--- Test Complete ---

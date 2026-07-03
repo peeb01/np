@@ -1,0 +1,57 @@
+--- Testing Dynamic Arrays ---
+Original array:
+[10, 20, 30, 40, 50]
+Modified array (index 1 to 99):
+[10, 99, 30, 40, 50]
+Access index 2:
+30
+
+--- Testing Pre-allocated Arrays ---
+Static 5-element array defaults to:
+[0, 0, 0, 0, 0]
+Static array after modification:
+[1, 0, 0, 0, 100]
+
+--- Testing Dictionaries ---
+User dictionary:
+{"age": 30, "is_admin": true, "name": Alice}
+Modified user dictionary:
+{"age": 31, "is_admin": true, "name": Alice, "status": active}
+User name is:
+Alice
+
+--- Testing Empty Dictionary & Multiple Additions ---
+Populated config:
+{"debug_mode": true, "host": localhost, "max_connections": 100, "port": 8080}
+
+--- Testing Nested Structures (Dicts in Arrays & Dicts in Dicts) ---
+List of users:
+[{"id": 1, "name": Alice, "role": Admin}, {"id": 2, "name": Bob, "role": User}]
+Second user's name is:
+Bob
+Server profile:
+{"ip": 192.168.1.100, "ports": [80, 443, 8080], "settings": {"retry": true, "timeout": 30}}
+Server timeout setting is:
+30
+Second open port is:
+443
+
+--- Testing Multi-Dimensional Arrays ---
+3x3 Matrix:
+[[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+Element at row 1, col 2:
+6
+Modified Matrix:
+[[1, 2, 3], [4, 5, 6], [99, 8, 9]]
+3D Tensor:
+[[[1, 2], [3, 4]], [[5, 6], [7, 8]]]
+Tensor element [1][0][1]:
+6
+
+--- Testing 5-Dimensional Arrays ---
+5D Array Shape:
+[2, 2, 2, 2, 2]
+5D Array Length (1st Dimension):
+2
+Element at [1][0][1][1][0]:
+23

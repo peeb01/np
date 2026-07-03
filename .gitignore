@@ -1,6 +1,5 @@
 np
 np/
-*.py
 .np_packages/*
 
 # C++ Build Artifacts and Transpiler Output

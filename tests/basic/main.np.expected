@@ -1,0 +1,75 @@
+--- 1. Data Types ---
+Age:
+23
+Height:
+175.5
+Name:
+Developer
+Running:
+true
+
+--- 2. Basic Operators ---
+Math:
+13
+7
+30
+3
+Comparison:
+false
+true
+true
+false
+Logic:
+false
+true
+false
+
+--- 3. Type Conversion ---
+Converted:
+100
+65
+85
+
+--- 4. Conditionals ---
+Grade A
+
+--- 5. Loops ---
+While Loop Count:
+1
+While Loop Count:
+2
+While Loop Count:
+3
+For Loop Iteration:
+0
+For Loop Iteration:
+1
+For Loop Iteration:
+2
+
+--- 6. Functions ---
+Hello
+np-lang user
+Is 23 an adult?
+true
+Divide 10 by 3 -> Quotient:
+3
+Remainder:
+1
+
+--- 7. Dynamic Type Checking ---
+The type of dynamic_x is:
+int
+
+-----------------------------------------------------
+--- 8. Arrays & Dictionaries ---
+Static 5-element array defaults to:
+[0, 0, 0, 0, 0]
+Array initialized as:
+[1, 2, 3, 4, 5]
+Array Index 2 evaluated to:
+3
+Modified User Dict:
+{"active": true, "age": 26, "name": Developer}
+Modified Array:
+[1, 2, 99, 4, 5]

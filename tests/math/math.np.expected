@@ -1,0 +1,27 @@
+--- 2D Vector Dot Product ---
+Dot product of
+[2, 3]
+and
+[4, 5]
+is:
+[PTR]
+
+--- 2x2 Matrix Multiplication ---
+Resulting Matrix C:
+[19, 22]
+[43, 50]
+
+--- Euclidean Distance Squared ---
+Squared distance between
+[1, 4]
+and
+[5, 8]
+is:
+[PTR]
+
+--- Recursion Test: Factorial ---
+Factorial of 5 is:
+120
+
+--- Benchmark: 1000x1000 Matrix Ops Simulation ---
+Executing 1,000,000,000 multiplications (Please wait a second)...

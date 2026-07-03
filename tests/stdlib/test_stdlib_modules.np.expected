@@ -1,0 +1,8 @@
+Testing time module:
+Current timestamp is:
+1.78304e+09
+Testing json module:
+Stringified JSON:
+{"age":25,"name":"Bob"}
+Parsed age is:
+25

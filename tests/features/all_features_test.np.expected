@@ -1,0 +1,71 @@
+=== 1. Testing Element-wise Array Arithmetic & Scalar Broadcasting ===
+A =
+[1, 2, 3]
+B =
+[10, 20, 30]
+A + B =
+[11, 22, 33]
+A - B =
+[-9, -18, -27]
+A * B =
+[10, 40, 90]
+B / A =
+[10, 10, 10]
+B % A =
+[0, 0, 0]
+A ^ B =
+[1, 1048576, [PTR]]
+
+--- Scalar Broadcasting ---
+A + 10 =
+[11, 12, 13]
+10 - A =
+[9, 8, 7]
+A * 5 =
+[5, 10, 15]
+A ^ 2 =
+[1, 4, 9]
+
+=== 2. Testing Foreach Loops ===
+Item in A:
+1
+Item in A:
+2
+Item in A:
+3
+Fruit:
+apple
+Fruit:
+banana
+Fruit:
+cherry
+
+=== 3. Testing File I/O Operations ===
+Writing msg to:
+tests/tmp_io.txt
+Write status:
+1
+Read content:
+hello from NP language file io!
+
+=== 4. Testing Vectorized Slicing ===
+slice_arr =
+[10, 20, 30, 40, 50]
+slice_arr[1:4] =
+[20, 30, 40]
+slice_arr[:3] =
+[10, 20, 30]
+slice_arr[2:] =
+[30, 40, 50]
+slice_arr[:] =
+[10, 20, 30, 40, 50]
+slice_str =
+abcdefg
+slice_str[1:4] =
+bcd
+slice_str[:3] =
+abc
+slice_str[2:] =
+cdefg
+slice_str[:] =
+abcdefg
