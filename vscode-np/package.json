@@ -6,7 +6,8 @@
   "publisher": "peeb01",
   "main": "./extension.js",
   "activationEvents": [
-    "onLanguage:np"
+    "onLanguage:np",
+    "onLanguage:np-expected"
   ],
   "engines": {
     "vscode": "^1.60.0"
@@ -35,11 +36,31 @@
           "light": "./image/NP.png",
           "dark": "./image/NP.png"
         }
+      },
+      {
+        "id": "np-expected",
+        "aliases": [
+          "NP Expected Result",
+          "np-expected"
+        ],
+        "extensions": [
+          ".np.expected"
+        ],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./image/NP-expected.png",
+          "dark": "./image/NP-expected.png"
+        }
       }
     ],
     "grammars": [
       {
         "language": "np",
+        "scopeName": "source.np",
+        "path": "./syntaxes/np.tmLanguage.json"
+      },
+      {
+        "language": "np-expected",
         "scopeName": "source.np",
         "path": "./syntaxes/np.tmLanguage.json"
       }

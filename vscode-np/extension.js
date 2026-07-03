@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 
 async function activate(context) {
-    let provider = vscode.languages.registerDefinitionProvider('np', {
+    const provider = {
         async provideDefinition(document, position, token) {
             const range = document.getWordRangeAtPosition(position);
             if (!range) return null;
@@ -91,9 +91,10 @@ async function activate(context) {
 
             return null;
         }
-    });
+    };
 
-    context.subscriptions.push(provider);
+    context.subscriptions.push(vscode.languages.registerDefinitionProvider('np', provider));
+    context.subscriptions.push(vscode.languages.registerDefinitionProvider('np-expected', provider));
 }
 
 function deactivate() {}
