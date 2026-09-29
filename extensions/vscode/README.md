@@ -19,12 +19,12 @@ Run the script inside this directory based on your OS:
 
 ### Method 2: Manual Local Installation
 
-1. Copy the `vscode-np` folder directly into your VS Code extensions folder:
+1. Copy the `extensions/vscode` folder directly into your VS Code extensions folder:
    - **Windows**: Copy to `%USERPROFILE%\.vscode\extensions\vscode-np`
    - **macOS / Linux**: Copy to `~/.vscode/extensions/vscode-np`
 2. Restart or reload your VS Code editor.
 
-### Method 2: Package and Install (VSIX)
+### Method 3: Package and Install (VSIX)
 
 1. Install VSCE (VS Code Extension Manager) globally:
    ```bash
@@ -32,7 +32,7 @@ Run the script inside this directory based on your OS:
    ```
 2. Navigate to the extension directory:
    ```bash
-   cd vscode-np
+   cd extensions/vscode
    ```
 3. Package the extension:
    ```bash
