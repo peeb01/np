@@ -35,14 +35,33 @@ print(d)  # -> {"2": 20, "4": 40, "6": 60, "8": 80}
 
 ---
 
-## 2. Modules & Import System
+## 2. Modules & Import System (Go-Style Imports)
 
-The `import` keyword allows you to modularize your code. The compiler parses imported files recursively, merging functions, variables, and struct definitions, and includes circular dependency protection.
+The `import` keyword allows you to modularize your code. The compiler supports clean Go-style package imports (without requiring the `.np` extension) and grouped imports.
+
+### Import Features
+1. **Clean Package Paths**: You no longer need to write `.np` explicitly.
+   - `import "./math_helper"` or `import "tests/imports/helper_library"`
+   - `import "time"` or `import "json"` (quoted standard library modules)
+2. **Grouped Imports (Go-Style)**: Import multiple packages cleanly inside parentheses:
+   ```python
+   import (
+       "time"
+       "json"
+       "tests/imports/helper_library"
+   )
+   ```
+3. **Aliases**:
+   - Go-style prefix alias: `import hl "tests/imports/helper_library"`
+   - Python-style `as` alias: `import "tests/imports/helper_library" as hl`
+   - Default package alias: calling `helper_library.double_val(21)` automatically works via the package's base name!
 
 ### Import Path Resolution Order
-When importing a file (e.g., `import "math_helper.np"`):
-1.  **Local Path Lookup**: The compiler first searches for `"math_helper.np"` relative to the current file's directory.
-2.  **Packages Folder Lookup**: If not found locally, the compiler checks the project's dependency cache directory: `.np_packages/math_helper.np`.
+When importing a module or package:
+1. **Standard Library**: Checks if it's a builtin module (`time`, `json`, `math`, `sys`, `regex`).
+2. **Local Path Lookup**: Searches locally (checking `path.np`, `path/mod.np`, `path/main.np`, `path/index.np`).
+3. **Packages Folder Lookup**: Checks installed dependencies in `.np_packages/` and all installed repositories.
+4. **Remote Git Package**: Automatically downloads and installs if it's a remote URL (e.g. `github.com/...`).
 
 ### Example
 Library file `math_helper.np`:
@@ -53,9 +72,12 @@ fn double_val(int v) -> int:
 
 Main file:
 ```python
-import "math_helper.np"
+import (
+    "time"
+    mh "math_helper"
+)
 
-print(double_val(21))  # -> 42
+print(mh.double_val(21))  # -> 42
 ```
 
 ---

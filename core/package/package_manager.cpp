@@ -1,6 +1,6 @@
-#include "../include/package_manager.hpp"
-#include "../include/http_fetch.hpp"
-#include "../include/miniz.h"
+#include "package_manager.hpp"
+#include "http_fetch.hpp"
+#include "miniz.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>

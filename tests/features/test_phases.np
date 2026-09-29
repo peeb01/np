@@ -1,0 +1,110 @@
+print("=== Test 1: func & function keywords ===")
+func add_func(int a, int b) -> int:
+    return a + b
+
+function multiply_function(int a, int b) -> int:
+    return a * b
+
+print("add_func(10, 20):", add_func(10, 20))
+print("multiply_function(5, 6):", multiply_function(5, 6))
+
+print("\n=== Test 2: Sized and Unsigned Types ===")
+uint8 u8 = 250
+byte b = 100
+uint16 u16 = 60000
+uint32 u32 = 4000000000
+uint64 u64 = 18000000000000000000
+int8 s8 = -120
+int16 s16 = -30000
+
+print("uint8:", u8)
+print("byte:", b)
+print("uint16:", u16)
+print("uint32:", u32)
+print("uint64:", u64)
+print("int8:", s8)
+print("int16:", s16)
+
+print("\n=== Test 3: Compound Assignment and ++/-- ===")
+int c = 10
+c += 5
+print("c after += 5:", c)
+c -= 3
+print("c after -= 3:", c)
+c *= 2
+print("c after *= 2:", c)
+c /= 4
+print("c after /= 4:", c)
+c %= 5
+print("c after %= 5:", c)
+c++
+print("c after c++:", c)
+c--
+print("c after c--:", c)
+
+print("\n=== Test 4: Bitwise Operators ===")
+int x = 12   # 1100 in binary
+int y = 10   # 1010 in binary
+print("x & y (12 & 10):", x & y)
+print("x | y (12 | 10):", x | y)
+print("x ^ y (12 ^ 10):", x ^ y)
+print("x << 2 (12 << 2):", x << 2)
+print("x >> 1 (12 >> 1):", x >> 1)
+
+print("\n=== Test 5: Type Inference := and var ===")
+inferred_int := 42
+inferred_str := "hello np"
+var inferred_bool = true
+var inferred_float = 3.1415
+
+print("inferred_int:", inferred_int)
+print("inferred_str:", inferred_str)
+print("inferred_bool:", inferred_bool)
+print("inferred_float:", inferred_float)
+
+print("\n=== Test 6: Loop Control (break & continue) ===")
+print("While loop with break:")
+int w = 0
+while w < 10:
+    if w == 3:
+        break
+    print(w)
+    w++
+
+print("For range loop with continue (skip odd):")
+for i in range(0, 6):
+    if i % 2 != 0:
+        continue
+    print(i)
+
+print("\n=== Test 7: nil Keyword ===")
+val := nil
+print("Is val nil?", val == nil)
+
+print("\n=== Test 8: First-class Functions & Chained Calls ===")
+func double(int n) -> int:
+    return n * 2
+
+func apply_op(int n, fn(int) -> int op) -> int:
+    return op(n)
+
+print("apply_op(21, double):", apply_op(21, double))
+
+func get_multiplier() -> fn(int) -> int:
+    return double
+
+# Assign function to variable
+op_var := get_multiplier()
+print("op_var(15):", op_var(15))
+
+# Chained call f()()
+print("get_multiplier()(50):", get_multiplier()(50))
+
+print("\n=== Test 9: Defer Statement ===")
+func test_defer():
+    print("start of test_defer")
+    defer print("deferred message: executed on return!")
+    print("end of test_defer")
+
+test_defer()
+print("All phases verified successfully!")

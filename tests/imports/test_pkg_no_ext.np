@@ -1,0 +1,4 @@
+import "tests/imports/helper_library"
+
+print("Double of 45 without extension is:")
+print(double_value(45))

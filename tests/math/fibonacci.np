@@ -1,23 +1,23 @@
 # print("--- Fibonacci with Dictionary Cache (Memoization) ---")
-# 
+
 # fn fib(int n, dict cache) -> int:
 #     # Base case
 #     if n <= 1:
 #         return n
-#     
+    
 #     string key = string(n)
-#     
+    
 #     if cache.has_key(key):
 #         return int(cache[key])
-#         
+        
 #     int result = fib(n - 1, cache) + fib(n - 2, cache)
-# 
+
 #     cache[key] = result
 #     return result
-# 
+
 # dict memo_cache
 # print("Calculating with cache...")
-# 
+
 # print("Result:", fib(10, memo_cache))
 # print("Total entries saved in dictionary cache:", memo_cache.length)
 

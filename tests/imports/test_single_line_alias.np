@@ -1,0 +1,4 @@
+import hl "tests/imports/helper_library"
+
+print("Single line Go-style alias:")
+print(hl.double_value(15))

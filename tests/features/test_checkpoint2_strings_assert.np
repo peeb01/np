@@ -1,0 +1,34 @@
+print("=== Checkpoint 2: String Interpolation (f-strings) ===")
+name := "Alice"
+age := 25
+greeting := f"Hello, my name is {name} and I am {age} years old."
+print("greeting:", greeting)
+
+# Expression evaluation inside f-strings
+x := 10
+y := 20
+calc := f"Math: {x} + {y} = {x + y}, product = {x * y}"
+print("calc:", calc)
+
+# Struct fields inside f-strings
+struct Person:
+    string name
+    int score
+
+p := Person("Charlie", 95)
+person_info := f"Player {p.name} scored {p.score} points!"
+print("person_info:", person_info)
+
+print("\n=== Checkpoint 2: Built-in assert Statement ===")
+# Basic assertion
+assert 100 > 50
+
+# Assertion with custom message
+flag := true
+assert flag, "flag must be true"
+
+total := x + y
+assert total == 30, "total must equal 30"
+
+print("All assertions passed successfully!")
+print("Checkpoint 2 verified successfully!")

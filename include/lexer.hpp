@@ -12,8 +12,9 @@ private:
     std::string source;
     size_t pos;
     int line;
+    int bracket_nesting;
 
-    char peek();
+    char peek() const;
     char advance();
     std::vector<int> indent_stack;
     bool is_at_line_start;

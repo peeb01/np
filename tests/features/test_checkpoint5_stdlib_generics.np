@@ -1,0 +1,54 @@
+import os
+import crypto
+
+print("=== Checkpoint 5: Extended Stdlib (os, crypto) & Generics ===")
+
+# 1. OS execution & environment
+print("--- 1. Testing os module ---")
+out1 := os.exec("echo hello_np")
+print("os.exec result:", out1)
+assert out1 == "hello_np", "os.exec output mismatch"
+
+code := os.system("true")
+print("os.system exit code:", code)
+assert code == 0, "os.system exit code must be 0"
+
+out2 := exec("echo direct_exec_works")
+print("direct exec result:", out2)
+assert out2 == "direct_exec_works", "direct exec mismatch"
+
+# 2. Crypto SHA-256
+print("\n--- 2. Testing crypto module ---")
+hash1 := crypto.sha256("hello")
+print("crypto.sha256('hello'):", hash1)
+assert hash1 == "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824", "sha256 mismatch"
+
+hash2 := sha256("hello")
+print("direct sha256('hello'):", hash2)
+assert hash2 == "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824", "direct sha256 mismatch"
+
+# 3. Generic Functions
+print("\n--- 3. Testing Generics ---")
+func identity[T](T val) -> T:
+    return val
+
+func pair_first[T, U](T a, U b) -> T:
+    return a
+
+val_int := identity[int](42)
+print("identity[int](42):", val_int)
+assert val_int == 42, "generic int identity mismatch"
+
+val_str := identity[string]("generic_string")
+print("identity[string]('generic_string'):", val_str)
+assert val_str == "generic_string", "generic string identity mismatch"
+
+val_auto := identity(999)
+print("identity(999):", val_auto)
+assert val_auto == 999, "inferred generic identity mismatch"
+
+p_first := pair_first[string, int]("winner", 1)
+print("pair_first('winner', 1):", p_first)
+assert p_first == "winner", "generic pair_first mismatch"
+
+print("\nCheckpoint 5 verified successfully!")

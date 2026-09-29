@@ -16,6 +16,9 @@
 #include <algorithm>
 #include <chrono>
 #include <thread>
+#include <queue>
+#include <mutex>
+#include <condition_variable>
 #include <regex>
 
 struct np_var;
@@ -284,6 +287,48 @@ inline int np_len(const std::string& s) { return s.length(); }
 inline int np_len(const char* s) { return std::string(s).length(); }
 inline int np_len(const np_var& v) { return v.length(); }
 
+struct NPChannel {
+    std::queue<np_var> queue;
+    std::mutex mtx;
+    std::condition_variable cv_not_empty;
+    std::condition_variable cv_not_full;
+    size_t capacity;
+    bool closed;
+
+    NPChannel(size_t cap = 0) : capacity(cap), closed(false) {}
+
+    void send(const np_var& val) {
+        std::unique_lock<std::mutex> lock(mtx);
+        if (capacity > 0) {
+            cv_not_full.wait(lock, [this]() { return queue.size() < capacity || closed; });
+        }
+        if (closed) return;
+        queue.push(val);
+        cv_not_empty.notify_one();
+    }
+
+    np_var recv() {
+        std::unique_lock<std::mutex> lock(mtx);
+        cv_not_empty.wait(lock, [this]() { return !queue.empty() || closed; });
+        if (queue.empty() && closed) {
+            return np_var();
+        }
+        np_var val = queue.front();
+        queue.pop();
+        if (capacity > 0) {
+            cv_not_full.notify_one();
+        }
+        return val;
+    }
+
+    void close() {
+        std::lock_guard<std::mutex> lock(mtx);
+        closed = true;
+        cv_not_empty.notify_all();
+        cv_not_full.notify_all();
+    }
+};
+
 std::string np_read_file(const std::string& filename);
 inline std::string np_read_file(const np_var& filename) { return np_read_file(static_cast<std::string>(filename)); }
 
@@ -417,6 +462,7 @@ extern "C" {
     void np_rt_print_bool(bool v);
     void np_rt_print_string(void* s);
     void np_rt_print_var(void* v);
+    void np_rt_assert_fail(int64_t line, void* msg_str);
 
     // Conversion API
     int64_t np_rt_to_int_string(void* s);
@@ -452,4 +498,19 @@ extern "C" {
     int64_t np_rt_net_send(int64_t socket_fd, void* data_str);
     void* np_rt_net_recv(int64_t socket_fd, int64_t max_bytes);
     void np_rt_net_close(int64_t socket_fd);
+
+    // Concurrency Channels & Goroutines API
+    void* np_rt_chan_create(int64_t capacity);
+    void np_rt_chan_send(void* ch, void* val);
+    void* np_rt_chan_recv(void* ch);
+    void np_rt_chan_close(void* ch);
+    void np_rt_go_spawn(void (*fn)(void*), void* arg);
+    void* np_rt_var_create_ptr(void* ptr);
+    void* np_rt_to_ptr_var(void* v);
+
+    // OS & Crypto API
+    void* np_rt_os_exec(void* cmd_ptr);
+    int64_t np_rt_os_system(void* cmd_ptr);
+    void* np_rt_os_getenv(void* name_ptr);
+    void* np_rt_crypto_sha256(void* data_ptr);
 }

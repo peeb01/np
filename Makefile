@@ -31,7 +31,28 @@ else
     ECHO_MSG = "%s\n"
 endif
 
-SRCS := core/lexer.cpp core/parser.cpp core/ast.cpp core/llvm_codegen.cpp core/codegen_expr.cpp core/codegen_stmt.cpp core/package_manager.cpp core/http_fetch.cpp core/miniz.cpp main.cpp
+SRCS := core/lexer/lexer.cpp \
+        core/ast/ast.cpp \
+        core/parser/base.cpp \
+        core/parser/import.cpp \
+        core/parser/expr.cpp \
+        core/parser/stmt.cpp \
+        core/parser/parser.cpp \
+        core/llvm/runtime.cpp \
+        core/llvm/types.cpp \
+        core/llvm/target.cpp \
+        core/llvm/codegen.cpp \
+        core/llvm/expr/literals.cpp \
+        core/llvm/expr/binary.cpp \
+        core/llvm/expr/calls.cpp \
+        core/llvm/expr/comp.cpp \
+        core/llvm/stmt/decl.cpp \
+        core/llvm/stmt/control.cpp \
+        core/llvm/stmt/func.cpp \
+        core/package/package_manager.cpp \
+        core/package/http_fetch.cpp \
+        core/package/miniz.cpp \
+        main.cpp
 OBJS := $(SRCS:.cpp=.o)
 
 all: $(RUNTIME) $(TARGET)
@@ -59,11 +80,13 @@ $(TARGET): $(OBJS)
 
 %.o: %.cpp
 	@printf $(ECHO_MSG) "CXX" $<
+	@mkdir -p $(dir $@)
 	$(Q)$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
 	@printf $(ECHO_MSG) "CLEAN" "object files"
 	$(Q)rm -f $(OBJS) runtime/npruntime.o runtime/npruntime_api.o
+	$(Q)find core -name "*.o" -delete 2>/dev/null || true
 
 fclean: clean
 	@printf $(ECHO_MSG) "FCLEAN" $(TARGET)

@@ -1,0 +1,23 @@
+=== Checkpoint 1: Multiple Return Values & Unpacking ===
+q:
+5
+err is empty:
+true
+err_msg:
+error: division by zero
+sum:
+20
+diff:
+10
+
+=== Checkpoint 1: Mutating Pointer Methods (*Struct) ===
+initial area:
+200
+scaled width:
+30
+scaled height:
+60
+scaled area:
+1800
+
+Checkpoint 1 verified successfully!

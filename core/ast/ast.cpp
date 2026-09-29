@@ -1,4 +1,4 @@
-#include "../include/ast.hpp"
+#include "ast.hpp"
 #include <iostream>
 
 static void printIndent(int indent) {
@@ -34,10 +34,20 @@ void BinaryExprAST::print(int indent) const {
 
 void CallExprAST::print(int indent) const {
     printIndent(indent);
-    std::cout << "[CallExpr] callee: " << callee << "\n";
+    if (callee_expr) {
+        std::cout << "[CallExpr] expr:\n";
+        callee_expr->print(indent + 1);
+    } else {
+        std::cout << "[CallExpr] callee: " << callee << "\n";
+    }
     for (const auto& arg : args) {
         arg->print(indent + 1);
     }
+}
+
+void NilExprAST::print(int indent) const {
+    printIndent(indent);
+    std::cout << "[NilExpr] nil\n";
 }
 
 void ListExprAST::print(int indent) const {
@@ -196,6 +206,54 @@ void ReturnStmtAST::print(int indent) const {
     }
 }
 
+void BreakStmtAST::print(int indent) const {
+    printIndent(indent);
+    std::cout << "[BreakStmt]\n";
+}
+
+void ContinueStmtAST::print(int indent) const {
+    printIndent(indent);
+    std::cout << "[ContinueStmt]\n";
+}
+
+void DeferStmtAST::print(int indent) const {
+    printIndent(indent);
+    std::cout << "[DeferStmt]\n";
+    if (stmt) stmt->print(indent + 1);
+}
+
+void GoStmtAST::print(int indent) const {
+    printIndent(indent);
+    std::cout << "[GoStmt]\n";
+    if (call) call->print(indent + 1);
+}
+
+void SwitchStmtAST::print(int indent) const {
+    printIndent(indent);
+    std::cout << "[SwitchStmt]\n";
+    if (cond) cond->print(indent + 1);
+    for (const auto& c : cases) {
+        printIndent(indent + 1);
+        std::cout << "Case:\n";
+        if (c.val) c.val->print(indent + 2);
+        if (c.body) c.body->print(indent + 2);
+    }
+    if (default_block) {
+        printIndent(indent + 1);
+        std::cout << "Default:\n";
+        default_block->print(indent + 2);
+    }
+}
+
+void EnumDeclStmtAST::print(int indent) const {
+    printIndent(indent);
+    std::cout << "[EnumDeclStmt] name: " << name << "\n";
+    for (const auto& m : members) {
+        printIndent(indent + 1);
+        std::cout << m.first << " = " << m.second << "\n";
+    }
+}
+
 void FuncDeclStmtAST::print(int indent) const {
     printIndent(indent);
     std::cout << "[FuncDeclStmt] name: " << name << ", return_type: " << return_type << "\n";
@@ -245,4 +303,20 @@ void ExprStmtAST::print(int indent) const {
     printIndent(indent);
     std::cout << "[ExprStmt]\n";
     expr->print(indent + 1);
+}
+
+void AssertStmtAST::print(int indent) const {
+    printIndent(indent);
+    std::cout << "[AssertStmt] line: " << line << "\n";
+    if (cond) cond->print(indent + 1);
+    if (message) message->print(indent + 1);
+}
+
+void InterfaceDeclStmtAST::print(int indent) const {
+    printIndent(indent);
+    std::cout << "[InterfaceDeclStmt] name: " << name << "\n";
+    for (const auto& m : methods) {
+        printIndent(indent + 1);
+        std::cout << "method: " << m << "\n";
+    }
 }

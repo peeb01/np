@@ -1,0 +1,43 @@
+print("=== Checkpoint 1: Multiple Return Values & Unpacking ===")
+func divide(int a, int b) -> int, string:
+    if b == 0:
+        return 0, "error: division by zero"
+    return a / b, ""
+
+q, err := divide(20, 4)
+print("q:", q)
+print("err is empty:", err == "")
+
+q_err, err_msg := divide(10, 0)
+print("err_msg:", err_msg)
+
+func stats(int x, int y) -> int, int:
+    sum := x + y
+    diff := x - y
+    return sum, diff
+
+s, d := stats(15, 5)
+print("sum:", s)
+print("diff:", d)
+
+print("\n=== Checkpoint 1: Mutating Pointer Methods (*Struct) ===")
+struct Rectangle:
+    int width
+    int height
+
+func (r Rectangle) area() -> int:
+    return r.width * r.height
+
+func (r *Rectangle) scale(int factor):
+    r.width *= factor
+    r.height *= factor
+
+rect := Rectangle(10, 20)
+print("initial area:", rect.area())
+
+rect.scale(3)
+print("scaled width:", rect.width)
+print("scaled height:", rect.height)
+print("scaled area:", rect.area())
+
+print("\nCheckpoint 1 verified successfully!")

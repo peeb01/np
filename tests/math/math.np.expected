@@ -4,7 +4,7 @@ Dot product of
 and
 [4, 5]
 is:
-[PTR]
+23
 
 --- 2x2 Matrix Multiplication ---
 Resulting Matrix C:
@@ -17,7 +17,7 @@ Squared distance between
 and
 [5, 8]
 is:
-[PTR]
+32
 
 --- Recursion Test: Factorial ---
 Factorial of 5 is:

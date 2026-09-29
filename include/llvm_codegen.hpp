@@ -21,7 +21,14 @@ public:
     std::unordered_map<std::string, llvm::AllocaInst*> NamedValues;
     std::unordered_map<std::string, std::string> VariableTypes; // NP type name
     std::unordered_map<std::string, std::vector<std::pair<std::string, std::string>>> Structs;
+    std::unordered_map<std::string, std::vector<std::string>> FunctionParamTypes;
     
+    // Loop control stack: (continueBlock, breakBlock)
+    std::vector<std::pair<llvm::BasicBlock*, llvm::BasicBlock*>> LoopStack;
+    
+    // Defer stack for defer statements in current function
+    std::vector<StmtAST*> DeferStack;
+
     // Cache for declared runtime functions
     std::unordered_map<std::string, llvm::Function*> RuntimeFunctions;
     

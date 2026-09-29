@@ -1,0 +1,8 @@
+# Test Go syntax where alias precedes the package path: import alias "pkg"
+import (
+    hl "tests/imports/helper_library"
+)
+
+int r = hl.double_value(30)
+print("Double of 30 via Go-style alias is:")
+print(r)

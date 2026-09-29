@@ -1,0 +1,43 @@
+print("=== Checkpoint 4: Concurrency Channels & Goroutines ===")
+
+# 1. Basic Channel creation and operator send/receive
+ch := make_chan(5)
+ch <- 42
+ch <- 100
+
+val1 := <-ch
+val2 := <-ch
+
+print("val1 from channel:", val1)
+print("val2 from channel:", val2)
+assert val1 == 42, "val1 must be 42"
+assert val2 == 100, "val2 must be 100"
+
+# 2. String messages via channel
+msg_ch := make_chan(2)
+msg_ch <- "Channel Message 1"
+msg_ch <- "Channel Message 2"
+
+m1 := <-msg_ch
+m2 := <-msg_ch
+print("m1:", m1)
+print("m2:", m2)
+assert m1 == "Channel Message 1", "m1 mismatch"
+assert m2 == "Channel Message 2", "m2 mismatch"
+
+# 3. Background Goroutine with Channel Communication
+func worker_job(void ch):
+    time_sleep(0.05)
+    ch <- 777
+
+worker_ch := make_chan(1)
+print("Spawning background goroutine...")
+go worker_job(worker_ch)
+
+print("Waiting on channel for worker result...")
+worker_res := <-worker_ch
+print("Received from worker:", worker_res)
+assert worker_res == 777, "worker_res must be 777"
+
+chan_close(worker_ch)
+print("\nCheckpoint 4 verified successfully!")
