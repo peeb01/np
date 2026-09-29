@@ -1,0 +1,7 @@
+func caller() -> string:
+    return callee("forward declaration works!")
+
+func callee(string msg) -> string:
+    return "RESULT: " + msg
+
+print(caller())

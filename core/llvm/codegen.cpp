@@ -22,7 +22,16 @@ void LLVMCodeGen::compile(const std::vector<std::unique_ptr<ASTNode>>& ast) {
     llvm::Value* argvVal = &(*++mainArgs);
     Builder.CreateCall(getRuntimeFunction("np_rt_sys_init_args"), {argcVal, argvVal});
     
-    // 2. Generate code for all AST nodes
+    // Pass 1: Declare all struct types and function prototypes first (order-independent forward calls)
+    for (const auto& node : ast) {
+        if (node->getType() == ASTNodeType::STRUCT_DECL) {
+            node->codegen(*this);
+        } else if (node->getType() == ASTNodeType::FUNC_DECL) {
+            static_cast<FuncDeclStmtAST*>(node.get())->declarePrototype(*this);
+        }
+    }
+
+    // Pass 2: Generate code for all AST nodes
     for (const auto& node : ast) {
         if (node->getType() == ASTNodeType::FUNC_DECL) {
             // Save insert point
@@ -31,7 +40,7 @@ void LLVMCodeGen::compile(const std::vector<std::unique_ptr<ASTNode>>& ast) {
             // Restore insert point
             Builder.SetInsertPoint(savedBB);
         } else if (node->getType() == ASTNodeType::STRUCT_DECL) {
-            node->codegen(*this);
+            // Already declared in Pass 1
         } else {
             // Regular global statement compiled inside main
             node->codegen(*this);

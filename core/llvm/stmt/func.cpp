@@ -26,7 +26,10 @@ llvm::Value* ReturnStmtAST::codegen(LLVMCodeGen& g) {
     return nullptr;
 }
 
-llvm::Value* FuncDeclStmtAST::codegen(LLVMCodeGen& g) {
+llvm::Function* FuncDeclStmtAST::declarePrototype(LLVMCodeGen& g) {
+    if (auto existing = g.TheModule.getFunction(name)) {
+        return existing;
+    }
     std::vector<std::string> paramTypeNames;
     std::vector<llvm::Type*> argTypes;
     for (const auto& p : params) {
@@ -40,7 +43,11 @@ llvm::Value* FuncDeclStmtAST::codegen(LLVMCodeGen& g) {
     
     auto retType = g.getLLVMType(return_type);
     auto funcType = llvm::FunctionType::get(retType, argTypes, false);
-    auto func = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, name, g.TheModule);
+    return llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, name, g.TheModule);
+}
+
+llvm::Value* FuncDeclStmtAST::codegen(LLVMCodeGen& g) {
+    auto func = declarePrototype(g);
     
     auto savedNamedValues = g.NamedValues;
     auto savedVariableTypes = g.VariableTypes;
