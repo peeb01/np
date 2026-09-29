@@ -22,7 +22,7 @@ COPY runtime/ ./runtime/
 COPY main.cpp ./
 
 # Build the 'np' compiler and npruntime library using the Makefile
-RUN make NO_TEST=1 -j$(nproc)
+RUN make clean && make NO_TEST=1 -j$(nproc)
 
 # ---
 

@@ -4,7 +4,9 @@
 
 # Build artifacts
 *.o
-core/*.o
+**/*.o
+*.a
+**/*.a
 np
 app.out
 
