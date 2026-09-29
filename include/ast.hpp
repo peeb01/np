@@ -421,6 +421,7 @@ public:
     FuncDeclStmtAST(const std::string& name, std::vector<FuncParam> params, const std::string& ret_type, std::unique_ptr<BlockStmtAST> body)
         : name(name), params(std::move(params)), return_type(ret_type), body(std::move(body)) {}
     ASTNodeType getType() const override { return ASTNodeType::FUNC_DECL; }
+    llvm::Function* declarePrototype(LLVMCodeGen& g);
     llvm::Value* codegen(LLVMCodeGen& g) override;
     void print(int indent) const override;
 };

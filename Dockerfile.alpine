@@ -15,7 +15,7 @@ COPY runtime/ ./runtime/
 COPY main.cpp ./
 
 # Build the 'np' compiler and npruntime library using the Makefile
-RUN make
+RUN make NO_TEST=1 -j$(nproc)
 
 # ---
 
@@ -25,7 +25,8 @@ FROM alpine:3.22
 # Install runtime dependencies
 # g++ is needed for the np compiler to link generated LLVM objects.
 # llvm-dev is needed for the LLVM shared libraries (libLLVM.so) required by the np compiler.
-RUN apk add --no-cache g++ llvm-dev
+# git is needed for np package manager (np get) to clone dependencies.
+RUN apk add --no-cache g++ llvm-dev git
 
 # Set the working directory for mounting code
 WORKDIR /workspace
