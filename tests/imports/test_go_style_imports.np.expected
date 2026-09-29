@@ -1,0 +1,6 @@
+Go-style grouped import with alias test:
+Double of 25 is:
+50
+Testing quoted standard library import:
+true
+{"status":"ok"}

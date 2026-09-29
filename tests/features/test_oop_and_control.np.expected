@@ -1,0 +1,39 @@
+=== Test 1: Go-style Struct Receiver Methods ===
+rect.width:
+10
+rect.height:
+20
+rect.area():
+200
+rect.perimeter():
+60
+r2.area():
+56
+r2.perimeter():
+30
+
+=== Test 2: Switch / Case / Default Statement ===
+Number is one
+Number is two
+Number is three
+Number is other
+
+=== Test 3: Enum Declarations & Values ===
+Role.GUEST:
+0
+Role.USER:
+1
+Role.ADMIN:
+2
+HttpStatus.OK:
+200
+HttpStatus.CREATED:
+201
+HttpStatus.NOT_FOUND:
+404
+Access level: Guest
+Access level: Regular User
+Access level: Administrator
+Access level: Unknown
+
+All OOP, Control Flow & Enum tests completed successfully!

@@ -1,0 +1,72 @@
+print("=== Test 1: Go-style Struct Receiver Methods ===")
+struct Rectangle:
+    int width
+    int height
+
+func (r Rectangle) area() -> int:
+    return r.width * r.height
+
+func (r Rectangle) perimeter() -> int:
+    return 2 * (r.width + r.height)
+
+Rectangle rect = Rectangle(10, 20)
+print("rect.width:", rect.width)
+print("rect.height:", rect.height)
+print("rect.area():", rect.area())
+print("rect.perimeter():", rect.perimeter())
+
+# Short declaration with struct method
+r2 := Rectangle(7, 8)
+print("r2.area():", r2.area())
+print("r2.perimeter():", r2.perimeter())
+
+print("\n=== Test 2: Switch / Case / Default Statement ===")
+func describe_number(int n):
+    switch n:
+        case 1:
+            print("Number is one")
+        case 2:
+            print("Number is two")
+        case 3:
+            print("Number is three")
+        default:
+            print("Number is other")
+
+describe_number(1)
+describe_number(2)
+describe_number(3)
+describe_number(99)
+
+print("\n=== Test 3: Enum Declarations & Values ===")
+enum Role:
+    GUEST
+    USER
+    ADMIN
+
+print("Role.GUEST:", Role.GUEST)
+print("Role.USER:", Role.USER)
+print("Role.ADMIN:", Role.ADMIN)
+
+enum HttpStatus: OK = 200, CREATED = 201, NOT_FOUND = 404
+
+print("HttpStatus.OK:", HttpStatus.OK)
+print("HttpStatus.CREATED:", HttpStatus.CREATED)
+print("HttpStatus.NOT_FOUND:", HttpStatus.NOT_FOUND)
+
+func check_role(int role):
+    switch role:
+        case Role.GUEST:
+            print("Access level: Guest")
+        case Role.USER:
+            print("Access level: Regular User")
+        case Role.ADMIN:
+            print("Access level: Administrator")
+        default:
+            print("Access level: Unknown")
+
+check_role(Role.GUEST)
+check_role(Role.USER)
+check_role(Role.ADMIN)
+check_role(999)
+
+print("\nAll OOP, Control Flow & Enum tests completed successfully!")

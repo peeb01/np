@@ -1,0 +1,87 @@
+=== Test 1: func & function keywords ===
+add_func(10, 20):
+30
+multiply_function(5, 6):
+30
+
+=== Test 2: Sized and Unsigned Types ===
+uint8:
+255
+byte:
+255
+uint16:
+60000
+uint32:
+4000000000
+uint64:
+-989331456
+int8:
+255
+int16:
+35536
+
+=== Test 3: Compound Assignment and ++/-- ===
+c after += 5:
+15
+c after -= 3:
+12
+c after *= 2:
+24
+c after /= 4:
+6
+c after %= 5:
+1
+c after c++:
+2
+c after c--:
+1
+
+=== Test 4: Bitwise Operators ===
+x & y (12 & 10):
+8
+x | y (12 | 10):
+14
+x ^ y (12 ^ 10):
+6
+x << 2 (12 << 2):
+48
+x >> 1 (12 >> 1):
+6
+
+=== Test 5: Type Inference := and var ===
+inferred_int:
+42
+inferred_str:
+hello np
+inferred_bool:
+true
+inferred_float:
+3.1415
+
+=== Test 6: Loop Control (break & continue) ===
+While loop with break:
+0
+1
+2
+For range loop with continue (skip odd):
+0
+2
+4
+
+=== Test 7: nil Keyword ===
+Is val nil?
+true
+
+=== Test 8: First-class Functions & Chained Calls ===
+apply_op(21, double):
+42
+op_var(15):
+30
+get_multiplier()(50):
+100
+
+=== Test 9: Defer Statement ===
+start of test_defer
+end of test_defer
+deferred message: executed on return!
+All phases verified successfully!

@@ -1,0 +1,26 @@
+=== Checkpoint 5: Extended Stdlib (os, crypto) & Generics ===
+--- 1. Testing os module ---
+os.exec result:
+hello_np
+os.system exit code:
+0
+direct exec result:
+direct_exec_works
+
+--- 2. Testing crypto module ---
+crypto.sha256('hello'):
+2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824
+direct sha256('hello'):
+2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824
+
+--- 3. Testing Generics ---
+identity[int](42):
+42
+identity[string]('generic_string'):
+generic_string
+identity(999):
+999
+pair_first('winner', 1):
+winner
+
+Checkpoint 5 verified successfully!

@@ -1,0 +1,18 @@
+=== Checkpoint 3: Interface System & Dynamic Polymorphism ===
+Calling polymorphic function with Rectangle:
+Shape:
+MyRectangle
+area:
+200
+perimeter:
+60
+
+Calling polymorphic function with Square:
+Shape:
+MySquare
+area:
+49
+perimeter:
+28
+
+Checkpoint 3 verified successfully!

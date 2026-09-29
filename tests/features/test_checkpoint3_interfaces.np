@@ -1,0 +1,46 @@
+print("=== Checkpoint 3: Interface System & Dynamic Polymorphism ===")
+
+interface Shape:
+    func area() -> int
+    func perimeter() -> int
+
+struct Rectangle:
+    int width
+    int height
+
+func (r Rectangle) area() -> int:
+    return r.width * r.height
+
+func (r Rectangle) perimeter() -> int:
+    return 2 * (r.width + r.height)
+
+struct Square:
+    int side
+
+func (s Square) area() -> int:
+    return s.side * s.side
+
+func (s Square) perimeter() -> int:
+    return 4 * s.side
+
+# Polymorphic function that operates on ANY Shape interface
+func print_shape_info(string label, Shape s):
+    print("Shape:", label)
+    print("area:", s.area())
+    print("perimeter:", s.perimeter())
+
+rect := Rectangle(10, 20)
+sq := Square(7)
+
+print("Calling polymorphic function with Rectangle:")
+print_shape_info("MyRectangle", rect)
+
+print("\nCalling polymorphic function with Square:")
+print_shape_info("MySquare", sq)
+
+# Verify assertions on interface results
+assert rect.area() == 200, "Rectangle area must be 200"
+assert sq.area() == 49, "Square area must be 49"
+assert sq.perimeter() == 28, "Square perimeter must be 28"
+
+print("\nCheckpoint 3 verified successfully!")

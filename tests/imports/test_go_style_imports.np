@@ -1,0 +1,19 @@
+# Test Go-style package imports (without .np) and grouped imports
+import (
+    "time"
+    "json"
+    "tests/imports/helper_library" as hl
+)
+
+print("Go-style grouped import with alias test:")
+int res = hl.double_value(25)
+print("Double of 25 is:")
+print(res)
+
+print("Testing quoted standard library import:")
+float t = time.now()
+print(t > 0.0)
+
+dict d = {"status": "ok"}
+string s = json.stringify(d)
+print(s)

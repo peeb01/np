@@ -1,0 +1,11 @@
+=== Checkpoint 2: String Interpolation (f-strings) ===
+greeting:
+Hello, my name is Alice and I am 25 years old.
+calc:
+Math: 10 + 20 = 30, product = 200
+person_info:
+Player Charlie scored 95 points!
+
+=== Checkpoint 2: Built-in assert Statement ===
+All assertions passed successfully!
+Checkpoint 2 verified successfully!

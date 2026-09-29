@@ -1,0 +1,15 @@
+=== Checkpoint 4: Concurrency Channels & Goroutines ===
+val1 from channel:
+42
+val2 from channel:
+100
+m1:
+Channel Message 1
+m2:
+Channel Message 2
+Spawning background goroutine...
+Waiting on channel for worker result...
+Received from worker:
+777
+
+Checkpoint 4 verified successfully!

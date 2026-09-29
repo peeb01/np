@@ -34,13 +34,22 @@ enum class ASTNodeType {
     WHILE_STMT,
     FOR_STMT,
     RETURN_STMT,
+    BREAK_STMT,
+    CONTINUE_STMT,
+    DEFER_STMT,
+    GO_STMT,
     FUNC_DECL,
     STRUCT_DECL,
     TRY_EXCEPT_STMT,
     THROW_STMT,
     IMPORT_STMT,
     EXPR_STMT,
-    SLICE_EXPR
+    SLICE_EXPR,
+    NIL_LITERAL,
+    SWITCH_STMT,
+    ENUM_DECL,
+    ASSERT_STMT,
+    INTERFACE_DECL
 };
 
 // Base AST Node
@@ -116,11 +125,22 @@ public:
 class CallExprAST : public ExprAST {
 public:
     std::string callee;
+    std::unique_ptr<ExprAST> callee_expr;
     std::vector<std::unique_ptr<ExprAST>> args;
     
     CallExprAST(const std::string& callee, std::vector<std::unique_ptr<ExprAST>> args)
-        : callee(callee), args(std::move(args)) {}
+        : callee(callee), callee_expr(nullptr), args(std::move(args)) {}
+    CallExprAST(std::unique_ptr<ExprAST> callee_expr, std::vector<std::unique_ptr<ExprAST>> args)
+        : callee(""), callee_expr(std::move(callee_expr)), args(std::move(args)) {}
     ASTNodeType getType() const override { return ASTNodeType::CALL_EXPR; }
+    llvm::Value* codegen(LLVMCodeGen& g) override;
+    void print(int indent) const override;
+};
+
+class NilExprAST : public ExprAST {
+public:
+    NilExprAST() {}
+    ASTNodeType getType() const override { return ASTNodeType::NIL_LITERAL; }
     llvm::Value* codegen(LLVMCodeGen& g) override;
     void print(int indent) const override;
 };
@@ -322,6 +342,70 @@ public:
     void print(int indent) const override;
 };
 
+class BreakStmtAST : public StmtAST {
+public:
+    BreakStmtAST() {}
+    ASTNodeType getType() const override { return ASTNodeType::BREAK_STMT; }
+    llvm::Value* codegen(LLVMCodeGen& g) override;
+    void print(int indent) const override;
+};
+
+class ContinueStmtAST : public StmtAST {
+public:
+    ContinueStmtAST() {}
+    ASTNodeType getType() const override { return ASTNodeType::CONTINUE_STMT; }
+    llvm::Value* codegen(LLVMCodeGen& g) override;
+    void print(int indent) const override;
+};
+
+class DeferStmtAST : public StmtAST {
+public:
+    std::unique_ptr<StmtAST> stmt;
+    DeferStmtAST(std::unique_ptr<StmtAST> stmt) : stmt(std::move(stmt)) {}
+    ASTNodeType getType() const override { return ASTNodeType::DEFER_STMT; }
+    llvm::Value* codegen(LLVMCodeGen& g) override;
+    void print(int indent) const override;
+};
+
+class GoStmtAST : public StmtAST {
+public:
+    std::unique_ptr<ExprAST> call;
+    GoStmtAST(std::unique_ptr<ExprAST> call) : call(std::move(call)) {}
+    ASTNodeType getType() const override { return ASTNodeType::GO_STMT; }
+    llvm::Value* codegen(LLVMCodeGen& g) override;
+    void print(int indent) const override;
+};
+
+struct SwitchCase {
+    std::unique_ptr<ExprAST> val;
+    std::unique_ptr<BlockStmtAST> body;
+};
+
+class SwitchStmtAST : public StmtAST {
+public:
+    std::unique_ptr<ExprAST> cond;
+    std::vector<SwitchCase> cases;
+    std::unique_ptr<BlockStmtAST> default_block;
+    
+    SwitchStmtAST(std::unique_ptr<ExprAST> cond, std::vector<SwitchCase> cases, std::unique_ptr<BlockStmtAST> def_block)
+        : cond(std::move(cond)), cases(std::move(cases)), default_block(std::move(def_block)) {}
+    ASTNodeType getType() const override { return ASTNodeType::SWITCH_STMT; }
+    llvm::Value* codegen(LLVMCodeGen& g) override;
+    void print(int indent) const override;
+};
+
+class EnumDeclStmtAST : public StmtAST {
+public:
+    std::string name;
+    std::vector<std::pair<std::string, int>> members;
+    
+    EnumDeclStmtAST(const std::string& name, std::vector<std::pair<std::string, int>> members)
+        : name(name), members(std::move(members)) {}
+    ASTNodeType getType() const override { return ASTNodeType::ENUM_DECL; }
+    llvm::Value* codegen(LLVMCodeGen& g) override;
+    void print(int indent) const override;
+};
+
 struct FuncParam {
     std::string type;
     std::string name;
@@ -397,6 +481,31 @@ public:
     
     ExprStmtAST(std::unique_ptr<ExprAST> expr) : expr(std::move(expr)) {}
     ASTNodeType getType() const override { return ASTNodeType::EXPR_STMT; }
+    llvm::Value* codegen(LLVMCodeGen& g) override;
+    void print(int indent) const override;
+};
+
+class AssertStmtAST : public StmtAST {
+public:
+    std::unique_ptr<ExprAST> cond;
+    std::unique_ptr<ExprAST> message;
+    int line;
+    
+    AssertStmtAST(std::unique_ptr<ExprAST> cond, std::unique_ptr<ExprAST> message, int line)
+        : cond(std::move(cond)), message(std::move(message)), line(line) {}
+    ASTNodeType getType() const override { return ASTNodeType::ASSERT_STMT; }
+    llvm::Value* codegen(LLVMCodeGen& g) override;
+    void print(int indent) const override;
+};
+
+class InterfaceDeclStmtAST : public StmtAST {
+public:
+    std::string name;
+    std::vector<std::string> methods;
+    
+    InterfaceDeclStmtAST(const std::string& name, std::vector<std::string> methods)
+        : name(name), methods(std::move(methods)) {}
+    ASTNodeType getType() const override { return ASTNodeType::INTERFACE_DECL; }
     llvm::Value* codegen(LLVMCodeGen& g) override;
     void print(int indent) const override;
 };

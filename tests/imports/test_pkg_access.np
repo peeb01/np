@@ -1,0 +1,7 @@
+import "tests/imports/helper_library"
+
+print("Direct call:")
+print(double_value(77))
+
+print("Namespaced call via package base name:")
+print(helper_library.double_value(77))
