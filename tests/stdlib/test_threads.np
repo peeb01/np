@@ -1,0 +1,52 @@
+import threads
+import time
+
+func compute(int x, int y) -> int:
+    return x * y + 10
+
+func mutate_list(items) -> int:
+    items.append(999)
+    return items.len()
+
+# 1. Hardware concurrency
+cpus := threads.num_cpu()
+print("Hardware CPU cores:", cpus)
+assert cpus >= 1, "threads.num_cpu() should be >= 1"
+
+cpus_prop := threads.num_cpu
+print("Hardware CPU cores (property):", cpus_prop)
+assert cpus_prop >= 1, "threads.num_cpu property should be >= 1"
+
+# 2. Basic asynchronous execution & wait
+task1 := threads.run(compute, 5, 6)
+res1 := task1.wait()
+print("Task 1 result:", res1)
+assert res1 == 40, "task1 compute should equal 40"
+
+# 3. Alternative invocation & wait syntax threads.wait(task)
+task2 := threads(compute, 10, 20)
+res2 := threads.wait(task2)
+print("Task 2 result:", res2)
+assert res2 == 210, "task2 compute should equal 210"
+
+# 4. Isolated execution (isolated = true) -> deep clone prevents mutation of caller data
+isolated_list := [1, 2, 3]
+print("Before isolated run, list len:", isolated_list.len())
+task_iso := threads.run(mutate_list, isolated_list, isolated = true)
+iso_len := task_iso.wait()
+print("Isolated worker list len:", iso_len)
+print("After isolated run, caller list len:", isolated_list.len())
+assert iso_len == 4, "isolated worker saw 4 items"
+assert isolated_list.len() == 3, "caller list remained untouched with 3 items"
+
+# 5. Shared execution (isolated = false, default) -> caller data is mutated
+shared_list := [10, 20, 30]
+print("Before shared run, list len:", shared_list.len())
+task_shared := threads.run(mutate_list, shared_list)
+shared_len := task_shared.wait()
+print("Shared worker list len:", shared_len)
+print("After shared run, caller list len:", shared_list.len())
+assert shared_len == 4, "shared worker saw 4 items"
+assert shared_list.len() == 4, "caller list was modified in-place"
+
+print("All threads tests passed successfully!")

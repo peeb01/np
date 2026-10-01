@@ -1,4 +1,6 @@
 #include "llvm_codegen.hpp"
+#include "gpu_codegen.hpp"
+#include <iostream>
 
 LLVMCodeGen::LLVMCodeGen() 
     : TheModule("np_module", Context), Builder(Context) {
@@ -31,6 +33,23 @@ void LLVMCodeGen::compile(const std::vector<std::unique_ptr<ASTNode>>& ast) {
         }
     }
 
+    // Pass 1.5: Compile GPU kernels and embed PTX in TheModule so gpu.launch can reference it
+    GPUCodeGen::instance().reset();
+    for (const auto& node : ast) {
+        if (node->getType() == ASTNodeType::FUNC_DECL) {
+            auto funcNode = static_cast<FuncDeclStmtAST*>(node.get());
+            if (funcNode->is_kernel) {
+                GPUCodeGen::instance().compileKernel(funcNode);
+            }
+        }
+    }
+    if (GPUCodeGen::instance().hasKernels()) {
+        std::string ptx = GPUCodeGen::instance().compileToPTX();
+        auto* strConst = llvm::ConstantDataArray::getString(Context, ptx, true);
+        new llvm::GlobalVariable(TheModule, strConst->getType(), true,
+                                 llvm::GlobalValue::InternalLinkage, strConst, "__np_gpu_ptx_code");
+    }
+
     // Pass 2: Generate code for all AST nodes
     for (const auto& node : ast) {
         if (node->getType() == ASTNodeType::FUNC_DECL) {
@@ -46,7 +65,7 @@ void LLVMCodeGen::compile(const std::vector<std::unique_ptr<ASTNode>>& ast) {
             node->codegen(*this);
         }
     }
-    
+
     // 3. Close main function with return 0
     if (!Builder.GetInsertBlock()->getTerminator()) {
         Builder.CreateRet(llvm::ConstantInt::get(Context, llvm::APInt(32, 0, true)));

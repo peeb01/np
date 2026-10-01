@@ -9,8 +9,6 @@
 #include "include/parser.hpp"
 #include "include/llvm_codegen.hpp"
 #include "include/package_manager.hpp"
-#include <llvm/Support/raw_os_ostream.h>
-
 std::string readFile(const std::string& filename) {
     std::ifstream file(filename);
     if (!file.is_open()) {
@@ -52,7 +50,7 @@ void runPipeline(const std::string& filename, bool is_build_mode, const std::vec
     }
     
     // Link using g++
-    std::string link_cmd = "g++ " + obj_filename + " " + runtime_path + " -o " + out_binary + " -pthread";
+    std::string link_cmd = "g++ " + obj_filename + " " + runtime_path + " -o " + out_binary + " -pthread -ldl";
     int link_result = std::system(link_cmd.c_str());
     
     // Clean up temporary object file

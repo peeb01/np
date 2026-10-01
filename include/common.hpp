@@ -29,6 +29,7 @@ enum class TokenType {
     KEYWORD_EXCEPT,  // except
     KEYWORD_THROW,   // throw
     KEYWORD_IMPORT,  // import
+    KEYWORD_KERNEL,  // kernel
     IDENTIFIER,      // A, B, x, y
     ASSIGN,          // =
     COLON_ASSIGN,    // :=

@@ -1,0 +1,49 @@
+import gpu
+
+kernel func vec_add(a, b, c, n: int):
+    idx := gpu.thread_idx_x() + gpu.block_idx_x() * gpu.block_dim_x()
+    if idx < n:
+        c[idx] = a[idx] + b[idx]
+
+kernel func vec_mul(a, b, c, n: int):
+    idx := gpu.thread_idx_x() + gpu.block_idx_x() * gpu.block_dim_x()
+    if idx < n:
+        c[idx] = a[idx] * b[idx]
+
+func main():
+    print("Testing NVIDIA GPU Subsystem...")
+    print("GPU Available:", gpu.is_available())
+    print("GPU Count:", gpu.device_count())
+    print("GPU Device 0:", gpu.device_name(0))
+
+    int n = 2^10
+    print("Value of n (2^10):", n)
+    a := []
+    b := []
+    c := []
+    for i in range(0, n):
+        a.append(1.5)
+        b.append(2.5)
+        c.append(0.0)
+
+    print("Launching GPU vec_add kernel with 4 blocks x 256 threads...")
+    gpu.launch(vec_add, grid=4, block=256, a, b, c, n)
+
+    print("Result c[0]:", c[0])
+    print("Result c[512]:", c[512])
+    print("Result c[1023]:", c[1023])
+
+    assert c[0] == 4.0, "c[0] should be 4.0"
+    assert c[512] == 4.0, "c[512] should be 4.0"
+    assert c[1023] == 4.0, "c[1023] should be 4.0"
+
+    print("Launching GPU vec_mul kernel...")
+    gpu.launch(vec_mul, grid=4, block=256, a, b, c, n)
+    print("Mul Result c[0]:", c[0])
+    print("Mul Result c[1023]:", c[1023])
+    assert c[0] == 3.75, "c[0] should be 3.75"
+    assert c[1023] == 3.75, "c[1023] should be 3.75"
+
+    print("All NVIDIA GPU tests passed successfully!")
+
+main()

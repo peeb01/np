@@ -20,6 +20,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <regex>
+#include <future>
 
 struct np_var;
 struct np_var_list;
@@ -168,6 +169,7 @@ struct np_var {
     np_var split(const np_var& delim) const;
     np_var join(const np_var& arr) const;
     np_var trim() const;
+    np_var deep_clone() const;
     using const_iterator = const np_var*;
     const_iterator begin() const;
     const_iterator end() const;
@@ -326,6 +328,17 @@ struct NPChannel {
         closed = true;
         cv_not_empty.notify_all();
         cv_not_full.notify_all();
+    }
+};
+
+struct NPTask {
+    std::shared_future<np_var> fut;
+    NPTask(std::shared_future<np_var> f) : fut(f) {}
+    np_var wait() {
+        if (fut.valid()) {
+            return fut.get();
+        }
+        return np_var();
     }
 };
 
@@ -513,4 +526,9 @@ extern "C" {
     int64_t np_rt_os_system(void* cmd_ptr);
     void* np_rt_os_getenv(void* name_ptr);
     void* np_rt_crypto_sha256(void* data_ptr);
+
+    // Threads & Pure Concurrency API
+    int64_t np_rt_threads_num_cpu();
+    void* np_rt_threads_run(void* (*thunk)(void*), void* argList, bool isolated);
+    void* np_rt_task_wait(void* task_ptr);
 }

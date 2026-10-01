@@ -113,8 +113,10 @@ std::unique_ptr<StmtAST> Parser::parseGo() {
     return std::make_unique<GoStmtAST>(std::move(expr));
 }
     
-std::unique_ptr<StmtAST> Parser::parseFunction() {
-    advance(); // fn, func, function
+std::unique_ptr<StmtAST> Parser::parseFunction(bool is_kernel) {
+    if (check(TokenType::KEYWORD_FN)) {
+        advance(); // fn, func, function
+    }
     
     std::string receiver_name = "";
     std::string receiver_type = "";
@@ -253,7 +255,7 @@ std::unique_ptr<StmtAST> Parser::parseFunction() {
     is_inside_function = false;
     local_variables.clear();
     
-    return std::make_unique<FuncDeclStmtAST>(name, std::move(params), ret_type, std::move(body));
+    return std::make_unique<FuncDeclStmtAST>(name, std::move(params), ret_type, std::move(body), is_kernel);
 }
 
 std::unique_ptr<StmtAST> Parser::parseStruct() {
@@ -674,7 +676,12 @@ std::unique_ptr<StmtAST> Parser::parseInterface() {
 std::unique_ptr<StmtAST> Parser::parseStatement() {
     if (check(TokenType::NEWLINE)) { advance(); return nullptr; }
     
-    if (check(TokenType::KEYWORD_FN)) return parseFunction();
+    bool is_kernel = false;
+    if (check(TokenType::KEYWORD_KERNEL)) {
+        advance(); // kernel
+        is_kernel = true;
+    }
+    if (check(TokenType::KEYWORD_FN) || is_kernel) return parseFunction(is_kernel);
     if (check(TokenType::KEYWORD_STRUCT)) return parseStruct();
     if (check(TokenType::KEYWORD_INTERFACE)) return parseInterface();
     if (check(TokenType::KEYWORD_SWITCH)) return parseSwitch();

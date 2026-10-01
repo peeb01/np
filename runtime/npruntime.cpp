@@ -854,4 +854,30 @@ std::string np_regex_replace(const std::string& pattern, const std::string& repl
     try { std::regex re(pattern); return std::regex_replace(text, re, repl); } catch(...) { return text; }
 }
 
+np_var np_var::deep_clone() const {
+    if (std::holds_alternative<ListPtr>(v)) {
+        auto list = std::get<ListPtr>(v);
+        std::vector<np_var> newVec;
+        if (list) {
+            newVec.reserve(list->vec.size());
+            for (const auto& item : list->vec) {
+                newVec.push_back(item.deep_clone());
+            }
+        }
+        return np_var(newVec);
+    }
+    if (std::holds_alternative<DictPtr>(v)) {
+        auto dict = std::get<DictPtr>(v);
+        std::map<std::string, np_var> newMap;
+        if (dict) {
+            for (const auto& kv : dict->map) {
+                newMap[kv.first] = kv.second.deep_clone();
+            }
+        }
+        return np_var(newMap);
+    }
+    return *this;
+}
+
 // Note: The C-compatible extern "C" Runtime API wrapper implementations have been split into runtime/npruntime_api.cpp for maintainability.
+

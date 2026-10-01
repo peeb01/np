@@ -1,0 +1,65 @@
+import time
+
+# Memory-optimized row-chunk calculation
+# Processing row-by-row chunks restricts working memory and prevents heap bloat
+func compute_row_chunk(a, b, c, int start_row, int end_row, int n):
+    for i in range(start_row, end_row):
+        int row_offset = i * n
+        for j in range(0, n):
+            sum := 0.0
+            for k in range(0, n):
+                sum += a[row_offset + k] * b[k * n + j]
+            c[row_offset + j] = sum
+
+func main():
+    print("========================================")
+    print("    CPU Matrix Multiplication Benchmark")
+    print("      (Memory-Optimized with Chunking)  ")
+    print("========================================")
+
+    # Set N = 256 (default) or N = 512 (heavy computation)
+    int n = 256
+    int total = n * n
+    print("Matrix Dimension:", n, "x", n)
+    print("Total Elements:", total)
+    print("Total FLOPs (2 * N^3):", 2 * n * n * n)
+
+    print("Step 1: Initializing matrices A and B...")
+    a := []
+    b := []
+    c := []
+    for i in range(0, total):
+        a.append(1.0)
+        b.append(2.0)
+        c.append(0.0)
+    print("Matrices initialized successfully.")
+
+    # Chunking: Divide N rows into manageable slices to prevent RAM explosion
+    int chunk_size = 32
+    int num_chunks = n / chunk_size
+    print("Step 2: Processing in", num_chunks, "chunks (chunk_size:", chunk_size, "rows)...")
+
+    float t_start = time.now()
+
+    for ch in range(0, num_chunks):
+        int s_row = ch * chunk_size
+        int e_row = s_row + chunk_size
+        compute_row_chunk(a, b, c, s_row, e_row, n)
+        print("Completed Chunk", ch + 1, "/", num_chunks)
+
+    float t_end = time.now()
+    float elapsed_ms = (t_end - t_start) * 1000.0
+
+    print("========================================")
+    print("CPU Verification:")
+    print("C[0]:", c[0])
+    print("C[total-1]:", c[total - 1])
+    expected := n * 2.0
+    assert c[0] == expected, "c[0] mismatch"
+    assert c[total - 1] == expected, "c[total - 1] mismatch"
+
+    print("CPU Execution Time:", elapsed_ms, "ms")
+    print("Verification Passed Successfully!")
+    print("========================================")
+
+main()

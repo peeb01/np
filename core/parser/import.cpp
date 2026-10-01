@@ -154,7 +154,7 @@ std::unique_ptr<StmtAST> Parser::parseSingleImport() {
 
     // Recognize standard library modules even if written as string literal, e.g. import "time"
     static const std::unordered_set<std::string> stdlib_modules = {
-        "time", "json", "math", "sys", "regex", "os", "crypto"
+        "time", "json", "math", "sys", "regex", "os", "crypto", "threads", "gpu"
     };
     if (stdlib_modules.count(filename) > 0) {
         is_module_import = true;

@@ -37,7 +37,7 @@ public:
     std::unique_ptr<StmtAST> parseStatement();
 
     // Specific statement parsers
-    std::unique_ptr<StmtAST> parseFunction();
+    std::unique_ptr<StmtAST> parseFunction(bool is_kernel = false);
     std::unique_ptr<StmtAST> parseStruct();
     std::unique_ptr<StmtAST> parseIf();
     std::unique_ptr<StmtAST> parseWhile();

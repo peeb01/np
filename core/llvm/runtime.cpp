@@ -140,4 +140,15 @@ void LLVMCodeGen::declareRuntime() {
     declareFunc("np_rt_os_system", i64Ty, {i8PtrTy});
     declareFunc("np_rt_os_getenv", i8PtrTy, {i8PtrTy});
     declareFunc("np_rt_crypto_sha256", i8PtrTy, {i8PtrTy});
+
+    // Threads & Pure Concurrency API
+    declareFunc("np_rt_threads_num_cpu", i64Ty, {});
+    declareFunc("np_rt_threads_run", i8PtrTy, {i8PtrTy, i8PtrTy, i1Ty});
+    declareFunc("np_rt_task_wait", i8PtrTy, {i8PtrTy});
+
+    // GPU & NVPTX API
+    declareFunc("np_rt_gpu_device_count", i64Ty, {});
+    declareFunc("np_rt_gpu_device_name", i8PtrTy, {i64Ty});
+    declareFunc("np_rt_gpu_is_available", i1Ty, {});
+    declareFunc("np_rt_gpu_launch", voidTy, {i8PtrTy, i8PtrTy, i64Ty, i64Ty, i8PtrTy});
 }

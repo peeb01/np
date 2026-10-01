@@ -1,0 +1,65 @@
+import gpu
+import time
+
+kernel func matmul_kernel(a, b, c, n: int):
+    idx := gpu.thread_idx_x() + gpu.block_idx_x() * gpu.block_dim_x()
+    total := n * n
+    if idx < total:
+        row := idx / n
+        col := idx % n
+        sum := 0.0
+        row_offset := row * n
+        for k in range(0, n):
+            sum += a[row_offset + k] * b[k * n + col]
+        c[idx] = sum
+
+func main():
+    print("========================================")
+    print("    GPU Matrix Multiplication Benchmark")
+    print("========================================")
+    print("GPU Available:", gpu.is_available())
+    print("GPU Device:", gpu.device_name(0))
+
+    # Can scale up to 512 or 1024 smoothly on GPU
+    int n = 512
+    int total = n * n
+    print("Matrix Dimension:", n, "x", n)
+    print("Total Elements:", total)
+    print("Total FLOPs (2 * N^3):", 2 * n * n * n)
+
+    print("Step 1: Initializing matrices on host...")
+    a := []
+    b := []
+    c := []
+    for i in range(0, total):
+        a.append(1.0)
+        b.append(2.0)
+        c.append(0.0)
+    print("Initialization complete.")
+
+    int block_size = 256
+    int grid_size = total / block_size
+    if (total % block_size) > 0:
+        grid_size = grid_size + 1
+
+    print("Step 2: Launching GPU Kernel (Grid:", grid_size, ", Block:", block_size, ")...")
+    float t_start = time.now()
+
+    gpu.launch(matmul_kernel, grid=grid_size, block=block_size, a, b, c, n)
+
+    float t_end = time.now()
+    float elapsed_ms = (t_end - t_start) * 1000.0
+
+    print("========================================")
+    print("GPU Verification:")
+    print("C[0]:", c[0])
+    print("C[total-1]:", c[total - 1])
+    expected := n * 2.0
+    assert c[0] == expected, "c[0] mismatch"
+    assert c[total - 1] == expected, "c[total-1] mismatch"
+
+    print("GPU Execution Time (VRAM transfer + compute):", elapsed_ms, "ms")
+    print("Verification Passed Successfully!")
+    print("========================================")
+
+main()
