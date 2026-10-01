@@ -49,11 +49,12 @@ llvm::Value* BinaryExprAST::codegen(LLVMCodeGen& g) {
         if (op == "<=") return g.Builder.CreateICmpSLE(L, R, "letmp");
         if (op == ">=") return g.Builder.CreateICmpSGE(L, R, "getmp");
         
-        // Power operator (^)
-        auto lf = g.Builder.CreateSIToFP(L, llvm::Type::getDoubleTy(g.Context));
-        auto rf = g.Builder.CreateSIToFP(R, llvm::Type::getDoubleTy(g.Context));
-        auto res = g.Builder.CreateCall(g.getRuntimeFunction("pow"), {lf, rf});
-        return g.Builder.CreateFPToSI(res, L->getType());
+        if (op == "**") {
+            auto lf = g.Builder.CreateSIToFP(L, llvm::Type::getDoubleTy(g.Context));
+            auto rf = g.Builder.CreateSIToFP(R, llvm::Type::getDoubleTy(g.Context));
+            auto res = g.Builder.CreateCall(g.getRuntimeFunction("pow"), {lf, rf});
+            return g.Builder.CreateFPToSI(res, L->getType());
+        }
     }
     
     if ((isLInt || isLFloat) && (isRInt || isRFloat) && (isLFloat || isRFloat)) {
@@ -70,7 +71,7 @@ llvm::Value* BinaryExprAST::codegen(LLVMCodeGen& g) {
         if (op == ">") return g.Builder.CreateFCmpOGT(L, R, "fgttmp");
         if (op == "<=") return g.Builder.CreateFCmpOLE(L, R, "fletmp");
         if (op == ">=") return g.Builder.CreateFCmpOGE(L, R, "fgetmp");
-        if (op == "^") return g.Builder.CreateCall(g.getRuntimeFunction("pow"), {L, R});
+        if (op == "**") return g.Builder.CreateCall(g.getRuntimeFunction("pow"), {L, R});
     }
     
     // Dynamic np_var promotions
@@ -138,7 +139,7 @@ llvm::Value* BinaryExprAST::codegen(LLVMCodeGen& g) {
     if (op == "*") return g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_mul"), {vL, vR});
     if (op == "/") return g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_div"), {vL, vR});
     if (op == "%") return g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_mod"), {vL, vR});
-    if (op == "^") return g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_pow"), {vL, vR});
+    if (op == "^" || op == "**") return g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_pow"), {vL, vR});
     if (op == "==") return g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_eq"), {vL, vR});
     if (op == "!=") return g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_ne"), {vL, vR});
     if (op == "<") return g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_lt"), {vL, vR});

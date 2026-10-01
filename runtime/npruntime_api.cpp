@@ -601,4 +601,55 @@ extern "C" {
         std::string input = static_cast<np_string*>(data_ptr)->c_str();
         return new np_string(sha256_detail::compute(input));
     }
+
+    int64_t np_rt_threads_num_cpu() {
+        unsigned int n = std::thread::hardware_concurrency();
+        return n > 0 ? static_cast<int64_t>(n) : 1;
+    }
+
+    void* np_rt_threads_run(void* (*thunk)(void*), void* argList, bool isolated) {
+        np_var* targetArgs = nullptr;
+        if (isolated) {
+            // Shared-Nothing: Deep-clone all arguments to eliminate race conditions
+            if (argList) {
+                targetArgs = new np_var(static_cast<np_var*>(argList)->deep_clone());
+            } else {
+                targetArgs = new np_var(std::vector<np_var>{});
+            }
+        } else {
+            // High-Performance / C-Speed: Share pointer without copying overhead
+            if (argList) {
+                targetArgs = static_cast<np_var*>(argList);
+            } else {
+                targetArgs = new np_var(std::vector<np_var>{});
+            }
+        }
+
+        auto prom = std::make_shared<std::promise<np_var>>();
+        auto fut = prom->get_future().share();
+
+        std::thread([thunk, targetArgs, prom, isolated]() {
+            try {
+                void* ret = thunk(targetArgs);
+                if (ret) {
+                    prom->set_value(*static_cast<np_var*>(ret));
+                } else {
+                    prom->set_value(np_var());
+                }
+            } catch (...) {
+                prom->set_value(np_var());
+            }
+            if (isolated) {
+                delete targetArgs;
+            }
+        }).detach();
+
+        return new NPTask(fut);
+    }
+
+    void* np_rt_task_wait(void* task_ptr) {
+        if (!task_ptr) return new np_var();
+        auto* task = static_cast<NPTask*>(task_ptr);
+        return new np_var(task->wait());
+    }
 }

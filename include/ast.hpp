@@ -49,7 +49,8 @@ enum class ASTNodeType {
     SWITCH_STMT,
     ENUM_DECL,
     ASSERT_STMT,
-    INTERFACE_DECL
+    INTERFACE_DECL,
+    NAMED_ARG_EXPR
 };
 
 // Base AST Node
@@ -133,6 +134,18 @@ public:
     CallExprAST(std::unique_ptr<ExprAST> callee_expr, std::vector<std::unique_ptr<ExprAST>> args)
         : callee(""), callee_expr(std::move(callee_expr)), args(std::move(args)) {}
     ASTNodeType getType() const override { return ASTNodeType::CALL_EXPR; }
+    llvm::Value* codegen(LLVMCodeGen& g) override;
+    void print(int indent) const override;
+};
+
+class NamedArgExprAST : public ExprAST {
+public:
+    std::string name;
+    std::unique_ptr<ExprAST> value;
+    
+    NamedArgExprAST(const std::string& name, std::unique_ptr<ExprAST> value)
+        : name(name), value(std::move(value)) {}
+    ASTNodeType getType() const override { return ASTNodeType::NAMED_ARG_EXPR; }
     llvm::Value* codegen(LLVMCodeGen& g) override;
     void print(int indent) const override;
 };
@@ -417,9 +430,10 @@ public:
     std::vector<FuncParam> params;
     std::string return_type;
     std::unique_ptr<BlockStmtAST> body;
+    bool is_kernel;
     
-    FuncDeclStmtAST(const std::string& name, std::vector<FuncParam> params, const std::string& ret_type, std::unique_ptr<BlockStmtAST> body)
-        : name(name), params(std::move(params)), return_type(ret_type), body(std::move(body)) {}
+    FuncDeclStmtAST(const std::string& name, std::vector<FuncParam> params, const std::string& ret_type, std::unique_ptr<BlockStmtAST> body, bool is_kernel = false)
+        : name(name), params(std::move(params)), return_type(ret_type), body(std::move(body)), is_kernel(is_kernel) {}
     ASTNodeType getType() const override { return ASTNodeType::FUNC_DECL; }
     llvm::Function* declarePrototype(LLVMCodeGen& g);
     llvm::Value* codegen(LLVMCodeGen& g) override;

@@ -263,7 +263,14 @@ std::unique_ptr<ExprAST> Parser::parsePrimary() {
             advance(); // consume (
             std::vector<std::unique_ptr<ExprAST>> args;
             while (!check(TokenType::RPAREN) && !isAtEnd()) {
-                args.push_back(parseExpression());
+                if (check(TokenType::IDENTIFIER) && peek(1).type == TokenType::ASSIGN) {
+                    std::string kw = advance().value;
+                    advance(); // consume =
+                    auto val = parseExpression();
+                    args.push_back(std::make_unique<NamedArgExprAST>(kw, std::move(val)));
+                } else {
+                    args.push_back(parseExpression());
+                }
                 if (check(TokenType::COMMA)) advance();
             }
             expect(TokenType::RPAREN, "Expected ')' after function arguments");
@@ -307,7 +314,14 @@ std::unique_ptr<ExprAST> Parser::parsePostFix(std::unique_ptr<ExprAST> expr) {
                         advance(); // consume (
                         std::vector<std::unique_ptr<ExprAST>> args;
                         while (!check(TokenType::RPAREN) && !isAtEnd()) {
-                            args.push_back(parseExpression());
+                            if (check(TokenType::IDENTIFIER) && peek(1).type == TokenType::ASSIGN) {
+                                std::string kw = advance().value;
+                                advance(); // consume =
+                                auto val = parseExpression();
+                                args.push_back(std::make_unique<NamedArgExprAST>(kw, std::move(val)));
+                            } else {
+                                args.push_back(parseExpression());
+                            }
                             if (check(TokenType::COMMA)) advance();
                         }
                         expect(TokenType::RPAREN, "Expected ')' after function arguments");

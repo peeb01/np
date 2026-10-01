@@ -42,11 +42,24 @@ llvm::Value* NilExprAST::codegen(LLVMCodeGen& g) {
     return llvm::ConstantPointerNull::get(llvm::PointerType::get(llvm::Type::getInt8Ty(g.Context), 0));
 }
 
+llvm::Value* NamedArgExprAST::codegen(LLVMCodeGen& g) {
+    return value ? value->codegen(g) : nullptr;
+}
+
 llvm::Value* VariableExprAST::codegen(LLVMCodeGen& g) {
     auto alloca = g.NamedValues[name];
     if (!alloca) {
         if (name == "sys_argv") {
             return g.Builder.CreateCall(g.getRuntimeFunction("np_rt_sys_get_argv"), {});
+        }
+        if (name == "threads_num_cpu") {
+            return g.Builder.CreateCall(g.getRuntimeFunction("np_rt_threads_num_cpu"), {});
+        }
+        if (name == "gpu_is_available") {
+            return g.Builder.CreateCall(g.getRuntimeFunction("np_rt_gpu_is_available"), {});
+        }
+        if (name == "gpu_device_count") {
+            return g.Builder.CreateCall(g.getRuntimeFunction("np_rt_gpu_device_count"), {});
         }
         // First-class function reference
         if (auto* fn = g.TheModule.getFunction(name)) {

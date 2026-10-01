@@ -53,6 +53,6 @@ int Parser::getPrecedence(const std::string& op) const {
     if (op == "<<" || op == ">>") return 35;
     if (op == "+" || op == "-") return 40;
     if (op == "*" || op == "/" || op == "%") return 50;
-    if (op == "^") return 60;
+    if (op == "**") return 60;
     return -1;
 }

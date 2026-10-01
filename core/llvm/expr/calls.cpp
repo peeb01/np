@@ -81,6 +81,8 @@ llvm::Value* CallExprAST::codegen(LLVMCodeGen& g) {
         else if (method == "split") rt_func_name = "np_rt_var_split";
         else if (method == "join") rt_func_name = "np_rt_var_join";
         else if (method == "trim") rt_func_name = "np_rt_var_trim";
+        else if (method == "len" || method == "length") rt_func_name = "np_rt_var_len";
+        else if (method == "wait") rt_func_name = "np_rt_task_wait";
         else {
             std::cerr << "Codegen Error: Unknown method " << method << "\n";
             exit(1);
@@ -200,7 +202,8 @@ llvm::Value* CallExprAST::codegen(LLVMCodeGen& g) {
                         call->callee == "read_file" || call->callee == "time_format" || call->callee == "json_stringify" ||
                         call->callee == "regex_find" || call->callee == "regex_replace" || call->callee == "net_recv" ||
                         call->callee == "os_exec" || call->callee == "exec" || call->callee == "os_getenv" ||
-                        call->callee == "crypto_sha256" || call->callee == "sha256") {
+                        call->callee == "crypto_sha256" || call->callee == "sha256" ||
+                        call->callee == "gpu_device_name" || call->callee == "device_name") {
                         isString = true;
                     }
                 } else if (arg->getType() == ASTNodeType::SLICE_EXPR) {
@@ -396,12 +399,240 @@ llvm::Value* CallExprAST::codegen(LLVMCodeGen& g) {
         auto chVal = args[0]->codegen(g);
         return g.Builder.CreateCall(g.getRuntimeFunction("np_rt_chan_close"), {chVal});
     }
+
+    if (callee == "threads_run" || callee == "threads") {
+        if (args.empty()) {
+            std::cerr << "Codegen Error: threads.run requires at least one argument (the target function)\n";
+            exit(1);
+        }
+        std::string targetFuncName = "";
+        if (args[0]->getType() == ASTNodeType::VARIABLE_EXPR) {
+            targetFuncName = static_cast<VariableExprAST*>(args[0].get())->name;
+        } else {
+            std::cerr << "Codegen Error: First argument to threads.run must be a function identifier\n";
+            exit(1);
+        }
+
+        llvm::Function* calleeFunc = g.TheModule.getFunction(targetFuncName);
+        if (!calleeFunc) {
+            calleeFunc = g.getRuntimeFunction(targetFuncName);
+        }
+        if (!calleeFunc) {
+            std::cerr << "Codegen Error: Unknown function '" << targetFuncName << "' passed to threads.run\n";
+            exit(1);
+        }
+
+        static int thread_thunk_id = 0;
+        std::string thunkName = "__thread_thunk_" + std::to_string(++thread_thunk_id);
+        auto i8PtrTy = llvm::PointerType::get(llvm::Type::getInt8Ty(g.Context), 0);
+        auto ft = llvm::FunctionType::get(i8PtrTy, {i8PtrTy}, false);
+        auto thunkFunc = llvm::Function::Create(ft, llvm::Function::InternalLinkage, thunkName, g.TheModule);
+
+        auto oldIP = g.Builder.saveIP();
+        auto bb = llvm::BasicBlock::Create(g.Context, "entry", thunkFunc);
+        g.Builder.SetInsertPoint(bb);
+
+        auto argVar = thunkFunc->arg_begin();
+        std::vector<llvm::Value*> actualArgs;
+        unsigned paramIdx = 0;
+        for (auto& param : calleeFunc->args()) {
+            auto idxVal = llvm::ConstantInt::get(g.Context, llvm::APInt(64, paramIdx));
+            auto item = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_get_index"), {argVar, idxVal});
+            llvm::Value* castVal = item;
+            
+            std::string npParamType = "";
+            if (g.FunctionParamTypes.count(targetFuncName) && paramIdx < g.FunctionParamTypes[targetFuncName].size()) {
+                npParamType = g.FunctionParamTypes[targetFuncName][paramIdx];
+            }
+            paramIdx++;
+
+            if (param.getType()->isIntegerTy(64)) {
+                castVal = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_to_int_var"), {item});
+            } else if (param.getType()->isDoubleTy()) {
+                castVal = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_to_float_var"), {item});
+            } else if (param.getType()->isIntegerTy(1)) {
+                auto intVal = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_to_int_var"), {item});
+                castVal = g.Builder.CreateICmpNE(intVal, llvm::ConstantInt::get(g.Context, llvm::APInt(64, 0)));
+            } else if (param.getType()->isPointerTy()) {
+                if (npParamType == "string") {
+                    castVal = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_to_string_var"), {item});
+                } else if (npParamType == "array" || npParamType == "dict" || npParamType == "var" || 
+                           npParamType == "any" || npParamType == "auto" || npParamType.empty()) {
+                    castVal = item;
+                } else {
+                    castVal = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_to_ptr_var"), {item});
+                    castVal = g.Builder.CreateBitCast(castVal, param.getType());
+                }
+            }
+            actualArgs.push_back(castVal);
+        }
+
+        auto callRet = g.Builder.CreateCall(calleeFunc, actualArgs);
+
+        llvm::Value* retVar = nullptr;
+        if (calleeFunc->getReturnType()->isVoidTy()) {
+            retVar = llvm::ConstantPointerNull::get(i8PtrTy);
+        } else if (calleeFunc->getReturnType()->isIntegerTy(64)) {
+            retVar = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_create_int"), {callRet});
+        } else if (calleeFunc->getReturnType()->isDoubleTy()) {
+            retVar = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_create_float"), {callRet});
+        } else if (calleeFunc->getReturnType()->isIntegerTy(1)) {
+            retVar = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_create_bool"), {callRet});
+        } else if (calleeFunc->getReturnType()->isPointerTy()) {
+            bool isRetString = false;
+            if (g.FunctionReturnTypes.count(targetFuncName) && g.FunctionReturnTypes[targetFuncName] == "string") {
+                isRetString = true;
+            }
+            if (isRetString) {
+                retVar = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_create_string"), {callRet});
+            } else {
+                retVar = g.Builder.CreateBitCast(callRet, i8PtrTy);
+            }
+        } else {
+            retVar = llvm::ConstantPointerNull::get(i8PtrTy);
+        }
+
+        g.Builder.CreateRet(retVar);
+        g.Builder.restoreIP(oldIP);
+
+        llvm::Value* isoVal = llvm::ConstantInt::get(llvm::Type::getInt1Ty(g.Context), 0);
+        auto listVal = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_create_list"), {});
+        for (size_t i = 1; i < args.size(); ++i) {
+            if (args[i]->getType() == ASTNodeType::NAMED_ARG_EXPR) {
+                auto named = static_cast<NamedArgExprAST*>(args[i].get());
+                if (named->name == "isolated") {
+                    if (named->value) {
+                        auto rawIso = named->value->codegen(g);
+                        if (rawIso->getType()->isIntegerTy(1)) {
+                            isoVal = rawIso;
+                        } else if (rawIso->getType()->isIntegerTy(64)) {
+                            isoVal = g.Builder.CreateICmpNE(rawIso, llvm::ConstantInt::get(g.Context, llvm::APInt(64, 0)));
+                        } else if (rawIso->getType()->isPointerTy()) {
+                            auto intVal = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_to_int_var"), {rawIso});
+                            isoVal = g.Builder.CreateICmpNE(intVal, llvm::ConstantInt::get(g.Context, llvm::APInt(64, 0)));
+                        }
+                    }
+                    continue;
+                }
+            }
+            auto val = args[i]->codegen(g);
+            llvm::Value* promoted = nullptr;
+            if (val->getType()->isIntegerTy(64)) {
+                promoted = g.promoteToVar(val, "int");
+            } else if (val->getType()->isDoubleTy()) {
+                promoted = g.promoteToVar(val, "float");
+            } else if (val->getType()->isIntegerTy(1)) {
+                promoted = g.promoteToVar(val, "bool");
+            } else if (val->getType()->isPointerTy()) {
+                bool isArgStr = false;
+                if (args[i]->getType() == ASTNodeType::STRING_LITERAL) isArgStr = true;
+                else if (args[i]->getType() == ASTNodeType::VARIABLE_EXPR) {
+                    auto vname = static_cast<VariableExprAST*>(args[i].get())->name;
+                    if (g.VariableTypes.count(vname) && g.VariableTypes[vname] == "string") isArgStr = true;
+                }
+                if (isArgStr) {
+                    promoted = g.promoteToVar(val, "string");
+                } else {
+                    promoted = val;
+                }
+            } else {
+                promoted = val;
+            }
+            g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_append"), {listVal, promoted});
+        }
+
+        return g.Builder.CreateCall(g.getRuntimeFunction("np_rt_threads_run"), {thunkFunc, listVal, isoVal});
+    }
+
+    if (callee == "gpu_launch" || callee == "gpu_run") {
+        if (args.empty()) {
+            std::cerr << "Codegen Error: gpu.launch requires at least (kernel, grid, block, ...args)\n";
+            exit(1);
+        }
+        std::string kernelName = "";
+        if (args[0]->getType() == ASTNodeType::VARIABLE_EXPR) {
+            kernelName = static_cast<VariableExprAST*>(args[0].get())->name;
+        } else if (args[0]->getType() == ASTNodeType::STRING_LITERAL) {
+            kernelName = static_cast<StringExprAST*>(args[0].get())->value;
+        }
+
+        llvm::Value* gridVal = nullptr;
+        llvm::Value* blockVal = nullptr;
+        bool hasNamedGridOrBlock = false;
+        for (size_t i = 1; i < args.size(); ++i) {
+            if (args[i]->getType() == ASTNodeType::NAMED_ARG_EXPR) {
+                auto named = static_cast<NamedArgExprAST*>(args[i].get());
+                if (named->name == "grid" && named->value) {
+                    gridVal = named->value->codegen(g);
+                    hasNamedGridOrBlock = true;
+                } else if (named->name == "block" && named->value) {
+                    blockVal = named->value->codegen(g);
+                    hasNamedGridOrBlock = true;
+                }
+            }
+        }
+
+        auto listVal = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_create_list"), {});
+        int positionalIdx = 0;
+        for (size_t i = 1; i < args.size(); ++i) {
+            if (args[i]->getType() == ASTNodeType::NAMED_ARG_EXPR) {
+                continue;
+            }
+            positionalIdx++;
+            if (!hasNamedGridOrBlock && positionalIdx == 1) {
+                gridVal = args[i]->codegen(g);
+            } else if (!hasNamedGridOrBlock && positionalIdx == 2) {
+                blockVal = args[i]->codegen(g);
+            } else {
+                auto val = args[i]->codegen(g);
+                llvm::Value* promoted = nullptr;
+                if (val->getType()->isIntegerTy(64)) {
+                    promoted = g.promoteToVar(val, "int");
+                } else if (val->getType()->isDoubleTy()) {
+                    promoted = g.promoteToVar(val, "float");
+                } else if (val->getType()->isIntegerTy(1)) {
+                    promoted = g.promoteToVar(val, "bool");
+                } else {
+                    promoted = val;
+                }
+                g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_append"), {listVal, promoted});
+            }
+        }
+
+        if (!gridVal) gridVal = llvm::ConstantInt::get(llvm::Type::getInt64Ty(g.Context), 1);
+        if (!blockVal) blockVal = llvm::ConstantInt::get(llvm::Type::getInt64Ty(g.Context), 256);
+
+        if (!gridVal->getType()->isIntegerTy(64)) {
+            gridVal = g.Builder.CreateZExtOrTrunc(gridVal, llvm::Type::getInt64Ty(g.Context));
+        }
+        if (!blockVal->getType()->isIntegerTy(64)) {
+            blockVal = g.Builder.CreateZExtOrTrunc(blockVal, llvm::Type::getInt64Ty(g.Context));
+        }
+
+        auto i8PtrTy = llvm::PointerType::get(llvm::Type::getInt8Ty(g.Context), 0);
+        llvm::Value* ptxPtr = nullptr;
+        if (auto* gv = g.TheModule.getNamedGlobal("__np_gpu_ptx_code")) {
+            ptxPtr = g.Builder.CreatePointerCast(gv, i8PtrTy);
+        } else {
+            ptxPtr = g.Builder.CreateGlobalStringPtr("");
+        }
+        auto ptxStr = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_string_create"), {ptxPtr});
+
+        auto kernelStrPtr = g.Builder.CreateGlobalStringPtr(kernelName);
+        auto kernelStr = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_string_create"), {kernelStrPtr});
+
+        g.Builder.CreateCall(g.getRuntimeFunction("np_rt_gpu_launch"), {ptxStr, kernelStr, gridVal, blockVal, listVal});
+        return llvm::ConstantPointerNull::get(i8PtrTy);
+    }
     
     std::string actual_callee = callee;
-    if (callee == "json_marshal") actual_callee = "json_stringify";
+    if (actual_callee == "main" && g.TheModule.getFunction("__np_user_main")) actual_callee = "__np_user_main";
+    else if (callee == "json_marshal") actual_callee = "json_stringify";
     else if (callee == "json_unmarshal") actual_callee = "json_parse";
     else if (callee == "exec") actual_callee = "os_exec";
     else if (callee == "sha256") actual_callee = "crypto_sha256";
+    else if (callee == "threads_wait") actual_callee = "task_wait";
+    else if (callee == "threads_sleep") actual_callee = "time_sleep";
     
     llvm::Function* CalleeF = g.TheModule.getFunction(actual_callee);
     if (!CalleeF) {

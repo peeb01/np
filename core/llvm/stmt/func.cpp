@@ -1,4 +1,5 @@
 #include "llvm_codegen.hpp"
+#include "gpu_codegen.hpp"
 
 llvm::Value* ReturnStmtAST::codegen(LLVMCodeGen& g) {
     llvm::Value* val = nullptr;
@@ -27,7 +28,11 @@ llvm::Value* ReturnStmtAST::codegen(LLVMCodeGen& g) {
 }
 
 llvm::Function* FuncDeclStmtAST::declarePrototype(LLVMCodeGen& g) {
-    if (auto existing = g.TheModule.getFunction(name)) {
+    std::string funcName = name;
+    if (funcName == "main") {
+        funcName = "__np_user_main";
+    }
+    if (auto existing = g.TheModule.getFunction(funcName)) {
         return existing;
     }
     std::vector<std::string> paramTypeNames;
@@ -39,14 +44,26 @@ llvm::Function* FuncDeclStmtAST::declarePrototype(LLVMCodeGen& g) {
             : g.getLLVMType(p.type);
         argTypes.push_back(paramType);
     }
-    g.FunctionParamTypes[name] = paramTypeNames;
+    g.FunctionParamTypes[funcName] = paramTypeNames;
+    g.FunctionReturnTypes[funcName] = return_type;
+    if (name != funcName) {
+        g.FunctionParamTypes[name] = paramTypeNames;
+        g.FunctionReturnTypes[name] = return_type;
+    }
     
     auto retType = g.getLLVMType(return_type);
     auto funcType = llvm::FunctionType::get(retType, argTypes, false);
-    return llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, name, g.TheModule);
+    return llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, funcName, g.TheModule);
 }
 
 llvm::Value* FuncDeclStmtAST::codegen(LLVMCodeGen& g) {
+    if (is_kernel) {
+        auto func = declarePrototype(g);
+        auto bb = llvm::BasicBlock::Create(g.Context, "entry", func);
+        llvm::IRBuilder<> b(bb);
+        b.CreateRetVoid();
+        return func;
+    }
     auto func = declarePrototype(g);
     
     auto savedNamedValues = g.NamedValues;
@@ -66,6 +83,7 @@ llvm::Value* FuncDeclStmtAST::codegen(LLVMCodeGen& g) {
     
     unsigned idx = 0;
     for (auto& arg : func->args()) {
+        if (idx >= params.size()) break;
         auto const& p = params[idx++];
         arg.setName(p.name);
         auto paramType = (p.type == "void" || p.type == "*void" || p.type == "any" || p.type == "var")

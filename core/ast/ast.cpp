@@ -45,6 +45,12 @@ void CallExprAST::print(int indent) const {
     }
 }
 
+void NamedArgExprAST::print(int indent) const {
+    printIndent(indent);
+    std::cout << "[NamedArg] " << name << " =\n";
+    if (value) value->print(indent + 1);
+}
+
 void NilExprAST::print(int indent) const {
     printIndent(indent);
     std::cout << "[NilExpr] nil\n";

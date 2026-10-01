@@ -134,6 +134,7 @@ std::vector<Token> Lexer::tokenize() {
             else if (id == "import") tokens.push_back({TokenType::KEYWORD_IMPORT, id, line});
             else if (id == "assert") tokens.push_back({TokenType::KEYWORD_ASSERT, id, line});
             else if (id == "interface") tokens.push_back({TokenType::KEYWORD_INTERFACE, id, line});
+            else if (id == "kernel") tokens.push_back({TokenType::KEYWORD_KERNEL, id, line});
             else if (id == "true" || id == "false") tokens.push_back({TokenType::BOOL_LITERAL, id, line});
             else tokens.push_back({TokenType::IDENTIFIER, id, line});
             continue;
@@ -188,6 +189,7 @@ std::vector<Token> Lexer::tokenize() {
         if (c == ':' && pos + 1 < source.length() && source[pos + 1] == '=') { advance(); advance(); tokens.push_back({TokenType::COLON_ASSIGN, ":=", line}); continue; }
         if (c == '+' && pos + 1 < source.length() && source[pos + 1] == '=') { advance(); advance(); tokens.push_back({TokenType::PLUS_EQUAL, "+=", line}); continue; }
         if (c == '-' && pos + 1 < source.length() && source[pos + 1] == '=') { advance(); advance(); tokens.push_back({TokenType::MINUS_EQUAL, "-=", line}); continue; }
+        if (c == '*' && pos + 1 < source.length() && source[pos + 1] == '*') { advance(); advance(); tokens.push_back({TokenType::OPERATOR, "**", line}); continue; }
         if (c == '*' && pos + 1 < source.length() && source[pos + 1] == '=') { advance(); advance(); tokens.push_back({TokenType::MUL_EQUAL, "*=", line}); continue; }
         if (c == '/' && pos + 1 < source.length() && source[pos + 1] == '=') { advance(); advance(); tokens.push_back({TokenType::DIV_EQUAL, "/=", line}); continue; }
         if (c == '%' && pos + 1 < source.length() && source[pos + 1] == '=') { advance(); advance(); tokens.push_back({TokenType::MOD_EQUAL, "%=", line}); continue; }

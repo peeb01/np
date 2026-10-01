@@ -166,3 +166,29 @@ except Exception e:
 Trying division...
 Caught exception: Division by zero error!
 ```
+
+---
+
+## 6. Mathematical Exponentiation & Bitwise Operators
+
+NP supports high-performance mathematical operations alongside low-level bitwise operations.
+
+### Exponentiation Operator (`**`)
+To perform mathematical power calculations for integers, floating-point numbers, and dynamic variables, use the `**` operator:
+
+```python
+int n = 2 ** 10        # 1024
+float f = 2.5 ** 2     # 6.25
+print("2 ** 10 =", n)
+```
+
+### Bitwise XOR (`^`) vs Exponentiation
+In NP (as in Python, C, Go, and Rust), the caret symbol `^` represents **Bitwise XOR** for scalar types:
+
+```python
+int xor_val = 2 ^ 10   # Bitwise XOR: 0010 ^ 1010 = 1000 (8)
+print("2 ^ 10 =", xor_val)  # Outputs 8
+```
+
+> **Note for MATLAB/R Users**: If you are used to writing `2^10` for $2^{10}$, remember to use `2**10` in NP. Writing `2^10` will evaluate to `8` via bitwise XOR.
+
