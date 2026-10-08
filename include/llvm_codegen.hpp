@@ -37,11 +37,12 @@ public:
     void compile(const std::vector<std::unique_ptr<ASTNode>>& ast);
     void writeObjectFile(const std::string& filename);
     void dumpIR() const;
-    void optimize();
+    void optimize(int opt_level = 3);
     
     llvm::Type* getLLVMType(const std::string& np_type);
     llvm::Function* getRuntimeFunction(const std::string& name);
     llvm::Value* promoteToVar(llvm::Value* val, const std::string& type);
+    llvm::AllocaInst* createEntryBlockAlloca(llvm::Function* fn, llvm::Type* type, const std::string& varName);
 
 private:
     void declareRuntime();

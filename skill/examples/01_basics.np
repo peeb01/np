@@ -1,0 +1,61 @@
+# 01_basics.np
+# NP Programming Language - Basics Reference
+
+func add(int a, int b) -> int:
+    return a + b
+
+func divide(int a, int b) -> int, string:
+    if b == 0:
+        return 0, "division by zero"
+    return a / b, ""
+
+func main():
+    # 1. Variables & Type Inference
+    x := 42
+    name := "NP Developer"
+    pi := 3.14159
+    is_active := true
+
+    print("--- 1. Variables ---")
+    print("x:", x)
+    print("name:", name)
+    print("pi:", pi)
+    print("active:", is_active)
+
+    # 2. String Interpolation (f-strings)
+    print("\n--- 2. F-Strings ---")
+    greeting := f"Hello, {name}! Value of x is {x}."
+    print(greeting)
+
+    # 3. Dynamic Arrays & Operations
+    print("\n--- 3. Arrays ---")
+    items := [10, 20, 30]
+    items.append(40)
+    print("Array items:", items)
+    print("Array length:", items.len())
+    print("Slice [1:3]:", items[1:3])
+
+    # 4. Control Flow
+    print("\n--- 4. Control Flow ---")
+    if x > 50:
+        print("x is greater than 50")
+    elif x == 42:
+        print("x is the answer to everything!")
+    else:
+        print("x is small")
+
+    # Range loop
+    print("Loop 0..4:")
+    for i in range(0, 5):
+        print("  i =", i)
+
+    # 5. Functions & Multiple Return Values
+    print("\n--- 5. Functions ---")
+    sum := add(15, 27)
+    print("add(15, 27) =", sum)
+
+    res, err := divide(100, 4)
+    print("divide(100, 4) =", res, "err:", err)
+
+    res2, err2 := divide(10, 0)
+    print("divide(10, 0) =", res2, "err:", err2)

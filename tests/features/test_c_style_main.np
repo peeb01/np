@@ -1,0 +1,9 @@
+func helper() -> int:
+    return 200
+
+func main():
+    print("--- C/C++ Style Main Entry Point ---")
+    int local_val = 100
+    print("Local val:", local_val)
+    print("Helper call result:", helper())
+    print("Main executed automatically without bottom call!")

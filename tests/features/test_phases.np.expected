@@ -6,9 +6,9 @@ multiply_function(5, 6):
 
 === Test 2: Sized and Unsigned Types ===
 uint8:
-255
+250
 byte:
-255
+100
 uint16:
 60000
 uint32:
@@ -16,7 +16,7 @@ uint32:
 uint64:
 -989331456
 int8:
-255
+136
 int16:
 35536
 

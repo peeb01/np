@@ -1,0 +1,6 @@
+--- C/C++ Style Main Entry Point ---
+Local val:
+100
+Helper call result:
+200
+Main executed automatically without bottom call!

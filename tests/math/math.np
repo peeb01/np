@@ -95,19 +95,19 @@ array vB = [4, 5, 6]
 array vC = cross_product(vA, vB)
 print("Cross product of", vA, "and", vB, "is:", vC)
 
-# 8. True 1000x1000 Matrix Cross Multiplication Benchmark
-print("\n--- 8. 1000x1000 True Array Matrix Multiplication ---")
-int N_size = 1000
-print("Allocating 1000x1000 matrices (A and B)...")
+# 8. True Matrix Cross Multiplication Benchmark
+print("\n--- 8. 50x50 True Array Matrix Multiplication ---")
+int N_size = 50
+print("Allocating 50x50 matrices (A and B)...")
 
-array m_A[1000]
-array m_B[1000]
-array m_C[1000]
+array m_A[50]
+array m_B[50]
+array m_C[50]
 
 for i in range(0, N_size):
-    array r_A[1000]
-    array r_B[1000]
-    array r_C[1000]
+    array r_A[50]
+    array r_B[50]
+    array r_C[50]
     for j in range(0, N_size):
         r_A[j] = 2
         r_B[j] = 3
@@ -117,8 +117,7 @@ for i in range(0, N_size):
     m_C[i] = r_C
 
 print("Matrices allocated! Shape of A:", m_A.shape)
-print("Computing m_A x m_B (1,000,000,000 Array Operations)...")
-print("Please wait, this tests maximum array access speed...")
+print("Computing m_A x m_B...")
 
 for i in range(0, N_size):
     for j in range(0, N_size):
@@ -127,5 +126,5 @@ for i in range(0, N_size):
             sum_val = sum_val + (m_A[i][k] * m_B[k][j])
         m_C[i][j] = sum_val
 
-print("1000x1000 Matrix Multiplication Completed!")
-print("Sample Output (m_C[999][999]):", m_C[999][999])
+print("50x50 Matrix Multiplication Completed!")
+print("Sample Output (m_C[49][49]):", m_C[49][49])

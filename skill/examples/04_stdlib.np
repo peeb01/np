@@ -1,0 +1,51 @@
+# 04_stdlib.np
+# NP Programming Language - Standard Library Showcase: sys, time, json, regex
+
+import sys
+import time
+import json
+import regex
+
+func main():
+    print("=== NP Standard Library Reference ===")
+
+    # 1. sys module
+    print("\n--- 1. sys ---")
+    print("Command line arguments count:", len(sys.argv))
+    print("Program executable:", sys.argv[0])
+
+    # 2. time module
+    print("\n--- 2. time ---")
+    t1 := time.now()
+    print("Current timestamp:", t1)
+    time.sleep(0.05)
+    t2 := time.now()
+    print("Elapsed time (seconds):", t2 - t1)
+
+    # 3. json module (Serialization & Deserialization)
+    print("\n--- 3. json ---")
+    payload := {
+        "title": "Compiler Benchmark",
+        "version": 1,
+        "is_fast": true,
+        "tags": ["llvm", "codegen", "passbuilder"]
+    }
+
+    # stringify / marshal
+    raw_json := json.stringify(payload)
+    print("Serialized JSON:\n", raw_json)
+
+    # parse / unmarshal
+    parsed := json.parse(raw_json)
+    print("Parsed 'title':", parsed["title"])
+    print("Parsed 'is_fast':", parsed["is_fast"])
+
+    # 4. regex module
+    print("\n--- 4. regex ---")
+    email := "developer@np-lang.org"
+    is_valid := regex.match("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", email)
+    print("Email pattern matched:", is_valid)
+
+    text := "Server listening on 192.168.1.100 port 8080"
+    ip := regex.find("[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+", text)
+    print("Found IP address:", ip)

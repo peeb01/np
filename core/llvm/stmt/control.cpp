@@ -185,7 +185,7 @@ llvm::Value* ForStmtAST::codegen(LLVMCodeGen& g) {
         auto endVal = range_end->codegen(g);
         
         auto loopVarType = llvm::Type::getInt64Ty(g.Context);
-        auto alloca = g.Builder.CreateAlloca(loopVarType, nullptr, var_name);
+        auto alloca = g.createEntryBlockAlloca(parentF, loopVarType, var_name);
         g.Builder.CreateStore(startVal, alloca);
         
         g.NamedValues[var_name] = alloca;
@@ -224,11 +224,11 @@ llvm::Value* ForStmtAST::codegen(LLVMCodeGen& g) {
         auto lenVal = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_var_len"), {collVal});
         
         auto loopVarType = llvm::Type::getInt64Ty(g.Context);
-        auto idxAlloca = g.Builder.CreateAlloca(loopVarType, nullptr, "idx");
+        auto idxAlloca = g.createEntryBlockAlloca(parentF, loopVarType, "idx");
         g.Builder.CreateStore(llvm::ConstantInt::get(g.Context, llvm::APInt(64, 0)), idxAlloca);
         
         auto varPtrType = llvm::PointerType::get(llvm::Type::getInt8Ty(g.Context), 0);
-        auto varAlloca = g.Builder.CreateAlloca(varPtrType, nullptr, var_name);
+        auto varAlloca = g.createEntryBlockAlloca(parentF, varPtrType, var_name);
         g.NamedValues[var_name] = varAlloca;
         g.VariableTypes[var_name] = "np_var";
         
