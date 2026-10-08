@@ -1,0 +1,62 @@
+# 02_oop_interfaces.np
+# NP Programming Language - OOP, Structs, Pointer Receivers & Interfaces
+
+# 1. Interface definition
+interface Shape:
+    func area() -> int
+    func perimeter() -> int
+
+# 2. Struct Rectangle
+struct Rectangle:
+    int width
+    int height
+
+# Value receiver methods (read-only)
+func (r Rectangle) area() -> int:
+    return r.width * r.height
+
+func (r Rectangle) perimeter() -> int:
+    return 2 * (r.width + r.height)
+
+# Mutating pointer receiver method (*Rectangle)
+func (r *Rectangle) scale(int factor):
+    r.width *= factor
+    r.height *= factor
+
+# 3. Struct Square
+struct Square:
+    int side
+
+func (s Square) area() -> int:
+    return s.side * s.side
+
+func (s Square) perimeter() -> int:
+    return 4 * s.side
+
+# 4. Polymorphic function accepting any Shape
+func print_shape_info(string name, Shape s):
+    print("--- Shape:", name, "---")
+    print("Area:", s.area())
+    print("Perimeter:", s.perimeter())
+
+func main():
+    print("=== OOP, Pointer Receivers & Interfaces in NP ===")
+
+    # Struct instantiation
+    rect := Rectangle(10, 20)
+    sq := Square(7)
+
+    # Calling value methods
+    print("Rectangle initial area:", rect.area())
+
+    # Mutating via pointer receiver (*Rectangle)
+    rect.scale(2)
+    print("Rectangle after scale(2):")
+    print("  width:", rect.width)
+    print("  height:", rect.height)
+    print("  area:", rect.area())
+
+    # Polymorphic dispatch via Interface
+    print("\nPolymorphic calls:")
+    print_shape_info("Scaled Rectangle", rect)
+    print_shape_info("Square", sq)

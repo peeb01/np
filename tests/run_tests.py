@@ -27,7 +27,8 @@ CORE_TESTS = [
     'tests/stdlib/stdlib_test.np',
     'tests/stdlib/test_stdlib_modules.np',
     'tests/stdlib/test_sys_argv.np',
-    'tests/features/test_forward_decl.np'
+    'tests/features/test_forward_decl.np',
+    'tests/features/test_c_style_main.np'
 ]
 
 def run_compiler(test_file):

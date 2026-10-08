@@ -1,0 +1,54 @@
+# 03_concurrency.np
+# NP Programming Language - Concurrency: Channels, Goroutines & Thread Pools
+
+import threads
+
+# Worker function for goroutine
+func worker_task(void ch):
+    time_sleep(0.05)
+    ch <- "Worker completed successfully!"
+
+# CPU-heavy worker for thread pool
+func parallel_multiply(int a, int b) -> int:
+    return a * b
+
+func main():
+    print("=== Concurrency in NP ===")
+
+    # ---------------------------------------------------------
+    # 1. Channels & Goroutines (Go-style message passing)
+    # ---------------------------------------------------------
+    print("\n--- 1. Go-style Channels & Goroutines ---")
+    ch := make_chan(2)
+    ch <- 101
+    ch <- 202
+
+    v1 := <-ch
+    v2 := <-ch
+    print("Received from buffered channel:", v1, v2)
+
+    # Spawning goroutine
+    comm_ch := make_chan(1)
+    print("Spawning goroutine...")
+    go worker_task(comm_ch)
+
+    msg := <-comm_ch
+    print("Received from goroutine:", msg)
+    chan_close(comm_ch)
+
+    # ---------------------------------------------------------
+    # 2. Hardware Thread Pool (`threads` module)
+    # ---------------------------------------------------------
+    print("\n--- 2. Thread Pool & Multi-core Parallelism ---")
+    num_cpus := threads.num_cpu()
+    print("Hardware CPU Cores detected:", num_cpus)
+
+    # Submit task to thread pool
+    t1 := threads.run(parallel_multiply, 50, 4)
+    t2 := threads.run(parallel_multiply, 30, 7)
+
+    # Await results asynchronously
+    r1 := t1.wait()
+    r2 := t2.wait()
+    print("Thread Task 1 result (50 * 4):", r1)
+    print("Thread Task 2 result (30 * 7):", r2)

@@ -8,12 +8,13 @@ llvm::Value* BlockStmtAST::codegen(LLVMCodeGen& g) {
 }
 
 llvm::Value* VarDeclStmtAST::codegen(LLVMCodeGen& g) {
+    auto parentF = g.Builder.GetInsertBlock()->getParent();
     if (initializer && vars.size() > 1) {
         auto initVal = initializer->codegen(g);
         for (size_t i = 0; i < vars.size(); ++i) {
             const auto& v = vars[i];
             auto type = g.getLLVMType(v.type_name);
-            auto alloca = g.Builder.CreateAlloca(type, nullptr, v.var_name);
+            auto alloca = g.createEntryBlockAlloca(parentF, type, v.var_name);
             g.NamedValues[v.var_name] = alloca;
             g.VariableTypes[v.var_name] = v.type_name;
             
@@ -74,7 +75,7 @@ llvm::Value* VarDeclStmtAST::codegen(LLVMCodeGen& g) {
                 type = g.getLLVMType(actual_type);
             }
             
-            auto alloca = g.Builder.CreateAlloca(type, nullptr, v.var_name);
+            auto alloca = g.createEntryBlockAlloca(parentF, type, v.var_name);
             g.NamedValues[v.var_name] = alloca;
             g.VariableTypes[v.var_name] = actual_type;
             
@@ -94,6 +95,11 @@ llvm::Value* VarDeclStmtAST::codegen(LLVMCodeGen& g) {
                     } else if (actual_type == "bool") {
                         auto intVal = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_to_int_var"), {val}, "boolval_i");
                         finalVal = g.Builder.CreateICmpNE(intVal, llvm::ConstantInt::get(g.Context, llvm::APInt(64, 0)), "boolval");
+                    }
+                }
+                if (finalVal->getType() != type) {
+                    if (finalVal->getType()->isIntegerTy() && type->isIntegerTy()) {
+                        finalVal = g.Builder.CreateZExtOrTrunc(finalVal, type);
                     }
                 }
                 g.Builder.CreateStore(finalVal, alloca);
@@ -133,17 +139,26 @@ llvm::Value* VarAssignStmtAST::codegen(LLVMCodeGen& g) {
         auto typeName = g.VariableTypes[name];
         
         llvm::Value* finalVal = rhsVal;
-        bool isTargetPointer = (typeName != "int" && typeName != "float" && typeName != "bool");
+        bool isTargetPointer = (typeName != "int" && typeName != "float" && typeName != "bool" &&
+                                typeName != "uint8" && typeName != "byte" && typeName != "int8" &&
+                                typeName != "uint16" && typeName != "int16" && typeName != "uint32" &&
+                                typeName != "uint64" && typeName != "uint");
         if (isTargetPointer && !rhsVal->getType()->isPointerTy()) {
             finalVal = g.promoteToVar(rhsVal, rhsVal->getType()->isIntegerTy(64) ? "int" : (rhsVal->getType()->isDoubleTy() ? "float" : (rhsVal->getType()->isIntegerTy(1) ? "bool" : "string")));
         } else if (!isTargetPointer && rhsVal->getType()->isPointerTy()) {
-            if (typeName == "int") {
+            if (typeName == "int" || typeName == "uint64" || typeName == "uint") {
                 finalVal = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_to_int_var"), {rhsVal}, "intval");
             } else if (typeName == "float") {
                 finalVal = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_to_float_var"), {rhsVal}, "floatval");
             } else if (typeName == "bool") {
                 auto intVal = g.Builder.CreateCall(g.getRuntimeFunction("np_rt_to_int_var"), {rhsVal}, "boolval_i");
                 finalVal = g.Builder.CreateICmpNE(intVal, llvm::ConstantInt::get(g.Context, llvm::APInt(64, 0)), "boolval");
+            }
+        }
+        auto targetType = alloca->getAllocatedType();
+        if (finalVal->getType() != targetType) {
+            if (finalVal->getType()->isIntegerTy() && targetType->isIntegerTy()) {
+                finalVal = g.Builder.CreateZExtOrTrunc(finalVal, targetType);
             }
         }
         g.Builder.CreateStore(finalVal, alloca);

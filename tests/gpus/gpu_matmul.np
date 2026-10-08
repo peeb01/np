@@ -12,6 +12,8 @@ kernel func matmul_kernel(a, b, c, n: int):
         for k in range(0, n):
             sum += a[row_offset + k] * b[k * n + col]
         c[idx] = sum
+    print(total)
+    return total
 
 func main():
     print("========================================")
@@ -21,7 +23,7 @@ func main():
     print("GPU Device:", gpu.device_name(0))
 
     # Can scale up to 512 or 1024 smoothly on GPU
-    int n = 512
+    int n = 1024
     int total = n * n
     print("Matrix Dimension:", n, "x", n)
     print("Total Elements:", total)
